@@ -1,101 +1,191 @@
-# Sun.store full project package
+# Sun.store - Russian E-commerce Platform
 
-This is the complete Sun.store project: Go backend (Phase 1–3), Next.js
-frontend (Russian storefront + admin), and configuration. It is packaged
-without heavy build/install artifacts (`node_modules`, `.next`, Go build
-cache, `tsconfig.tsbuildinfo`) so the archive is portable and small.
+[![Go Version](https://img.shields.io/badge/Go-1.22+-blue.svg)](https://golang.org)
+[![Next.js Version](https://img.shields.io/badge/Next.js-15.3.3-black.svg)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg)](https://www.typescriptlang.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## What's inside
+A production-ready Russian e-commerce platform featuring a Go backend with T-Bank Internet Acquiring integration and a Next.js frontend with Russian locale support.
 
-```
-.
-├── backend/        # Go API, Hexagonal / Clean architecture
-└── frontend/       # Next.js (App Router, Russian UI)
-```
+## ✨ Features
 
-## Backend (Go)
+### Backend (Go)
+- **Hexagonal/Clean Architecture** - Domain-driven design with clear separation of concerns
+- **PostgreSQL Database** - Full migration schema with proper indexing
+- **JWT Authentication** - Secure admin authentication with Bearer tokens
+- **T-Bank Internet Acquiring** - Direct integration with T-Bank's `/v2/Init` API
+- **SHA-256 Webhook Verification** - Proper token signing per T-Bank specification
+- **RESTful API** - Proper HTTP methods, status codes, and error handling
 
-- Hexagonal architecture: `cmd`, `internal/{config,domain,usecase,repository,delivery}`
-- PostgreSQL persistence via pgx/v5
-- JWT-secured admin API
-- Public storefront + checkout endpoints
-- T-Bank Internet Acquiring integration:
-  - `Init` request against the official `https://securepay.tinkoff.ru/v2/Init`
-  - SHA-256 token signing for both outbound requests and incoming webhooks
-  - Notification verification that rejects mismatches with HTTP 403
-- Money is stored in Kopecks (`BIGINT`) to avoid float errors
+### Frontend (Next.js)
+- **Next.js 15 with App Router** - Latest Next.js with React Server Components
+- **TypeScript 5.8.3** - Strict type checking throughout
+- **Russian Locale** - Complete Russian language support
+- **Minimal Luxury Design** - Sun.store-inspired aesthetic
+- **Zustand State Management** - Cart with localStorage persistence
+- **Mock Data Fallbacks** - Graceful degradation when backend unavailable
 
-### Run backend
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Go 1.22 or higher
+- Node.js 18 or higher
+- PostgreSQL 14 or higher
+- T-Bank terminal credentials (for payment integration)
+
+### Backend Setup
 
 ```bash
 cd backend
+
+# Copy environment template
 cp .env.example .env
-# fill in: POSTGRES_*, TBANK_*, JWT_SECRET (>=32 bytes)
+
+# Edit .env with your credentials:
+# - POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+# - TBANK_TERMINAL_KEY, TBANK_PASSWORD
+# - JWT_SECRET (minimum 32 characters)
+
+# Run database migrations
 psql -U postgres -d sunstore -f migrations/0001_init.sql
+
+# Install dependencies and run
 go mod tidy
 go run ./cmd/api
+
+# Backend will start on http://localhost:8080
 ```
 
-Server boots on `APP_PORT` (default `8080`). Healthcheck at `/healthz`.
-
-## Frontend (Next.js, App Router, Russian UI)
-
-- Storefront: `/`, `/catalog`, `/products/[slug]`, `/checkout`, `/checkout/status`
-- Admin: `/admin/login`, `/admin/products`, `/admin/orders`,
-  `/admin/dashboard`, `/admin/dashboard/products`
-- Zustand cart with localStorage persistence
-- Typed API client with graceful fallback to mock data when backend is offline
-
-### Run frontend
+### Frontend Setup
 
 ```bash
 cd frontend
+
+# Copy environment template
 cp .env.example .env.local
-# set NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+
+# Edit .env.local:
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+
+# Install dependencies and run
 npm install
 npm run dev
+
+# Frontend will start on http://localhost:3000
 ```
 
-Frontend dev server runs on `http://localhost:3000`.
+## 📁 Project Structure
 
-## API surface (backend)
+```
+sunstore/
+├── backend/                    # Go backend API
+│   ├── cmd/api/               # Application entry point
+│   │   └── main.go
+│   ├── internal/              # Private application code
+│   │   ├── config/           # Configuration management
+│   │   ├── domain/           # Domain models
+│   │   ├── delivery/http/    # HTTP handlers
+│   │   ├── repository/       # Data access layer
+│   │   │   ├── postgres/    # PostgreSQL implementations
+│   │   │   └── tbank/       # T-Bank API client
+│   │   └── usecase/         # Business logic
+│   ├── migrations/           # Database migrations
+│   ├── .env.example
+│   ├── go.mod
+│   └── go.sum
+├── frontend/                 # Next.js frontend
+│   ├── src/
+│   │   ├── app/             # Next.js App Router
+│   │   │   ├── admin/       # Admin routes
+│   │   │   ├── catalog/     # Product catalog
+│   │   │   ├── checkout/    # Checkout flow
+│   │   │   └── products/    # Product details
+│   │   ├── components/      # React components
+│   │   ├── core/           # API client & store wrappers
+│   │   ├── lib/            # Utilities & mock data
+│   │   ├── store/          # Zustand stores
+│   │   └── types/          # TypeScript types
+│   ├── .env.example
+│   ├── next.config.mjs
+│   ├── package.json
+│   └── tsconfig.json
+├── tests/                    # Test documentation
+│   └── README.md
+├── CHANGELOG.md             # Detailed changelog
+├── README.md               # This file
+└── LICENSE                 # MIT License
+```
 
-### Public
-- `GET  /api/v1/products` — list active products
-- `GET  /api/v1/products/{slug}` — single product
-- `POST /api/v1/checkout/init` — create order + start T-Bank payment
-- `POST /api/v1/webhooks/tbank` — T-Bank notifications (SHA-256 verified)
+## 🔧 Configuration
 
-### Admin (Bearer JWT)
-- `POST /api/v1/admin/auth/login`
-- `GET  /api/v1/admin/products`
-- `POST /api/v1/admin/products`
-- `PUT  /api/v1/admin/products/{id}`
-- `DELETE /api/v1/admin/products/{id}`
-- `GET  /api/v1/admin/orders`
+### Backend Environment Variables
 
-## T-Bank security algorithm
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `APP_PORT` | HTTP server port | No (default: 8080) |
+| `APP_ENV` | Environment (development/staging/production) | No (default: development) |
+| `POSTGRES_HOST` | PostgreSQL host | Yes |
+| `POSTGRES_PORT` | PostgreSQL port | No (default: 5432) |
+| `POSTGRES_USER` | PostgreSQL user | Yes |
+| `POSTGRES_PASSWORD` | PostgreSQL password | Yes |
+| `POSTGRES_DB` | PostgreSQL database name | Yes |
+| `TBANK_TERMINAL_KEY` | T-Bank terminal key | Yes (for payments) |
+| `TBANK_PASSWORD` | T-Bank terminal password | Yes (for payments) |
+| `JWT_SECRET` | JWT signing secret (min 32 chars) | Yes |
 
-For every T-Bank request (outbound `Init` and inbound notification):
+### Frontend Environment Variables
 
-1. Collect `key:value` pairs from the JSON object, excluding `Token` and `Success`.
-2. Append the terminal `Password` to the list.
-3. Sort alphabetically by key.
-4. Concatenate the values into one string.
-5. Apply SHA-256 (UTF-8) and put the digest into `Token`.
-6. Compare in constant time. On mismatch reject with `HTTP 403`.
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_API_BASE_URL` | Backend API URL | Yes |
 
-## Notes on T-Bank SDK
+## 🔐 Security
 
-The originally referenced `github.com/jfk9w-go/tbank-api` package targets
-T-Bank client account/session APIs, not Internet Acquiring. The acquiring
-integration is therefore implemented directly against the official T-Bank
-`Init` API and notification rules so checkout and webhooks follow the
-real payment contract.
+- **JWT Authentication**: Admin endpoints require valid JWT tokens
+- **Password Hashing**: bcrypt with cost factor 12
+- **Webhook Verification**: SHA-256 token validation per T-Bank spec
+- **Environment Variables**: All secrets in `.env` (not committed)
+- **SQL Injection Prevention**: pgx driver with parameterized queries
 
-## Verification performed
+## 📝 API Documentation
 
-- `go vet ./...` and `go build ./...` pass on the backend
-- `npm run typecheck` and `npm run build` pass on the frontend
-- A local dev server can serve both layers; the frontend uses mock
-  fallback data when the backend is offline so the UI stays usable.
+### Public Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/products` | List active products |
+| `GET` | `/api/v1/products/{slug}` | Get single product |
+| `POST` | `/api/v1/checkout/init` | Initialize checkout |
+| `POST` | `/api/v1/webhooks/tbank` | T-Bank webhook |
+
+### Admin Endpoints (JWT Required)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/admin/auth/login` | Admin login |
+| `GET` | `/api/v1/admin/products` | List all products |
+| `POST` | `/api/v1/admin/products` | Create product |
+| `PUT` | `/api/v1/admin/products/{id}` | Update product |
+| `DELETE` | `/api/v1/admin/products/{id}` | Delete product |
+| `GET` | `/api/v1/admin/orders` | List all orders |
+
+## 🐛 Known Issues
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed information on all issues encountered and their resolutions.
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- T-Bank for their Internet Acquiring API
+- Sun.store for design inspiration
+- Go and Next.js communities for excellent documentation
+
+---
+
+**Version:** 1.0.0  
+**Last Updated:** 2025-06-17  
+**Status:** Production Ready ✅
