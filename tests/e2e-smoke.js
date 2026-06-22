@@ -98,28 +98,41 @@ const routes = [
   },
   {
     path: "/central/login",
-    name: "Central platform login",
+    name: "Super admin login",
     expects: [{ type: "status", value: 200 }]
   },
   {
     path: "/central/dashboard",
-    name: "Central dashboard (gated)",
+    name: "Super admin dashboard (gated)",
     expects: [{ type: "status", value: 200 }]
   },
   {
     path: "/central/setup",
-    name: "Central setup wizard",
+    name: "Super admin setup wizard",
+    expects: [{ type: "status", value: 200 }]
+  },
+  {
+    path: "/central/email",
+    name: "Platform email config (gated)",
+    expects: [{ type: "status", value: 200 }]
+  },
+  {
+    path: "/central/sites/1",
+    name: "Shop detail page (gated)",
     expects: [{ type: "status", value: 200 }]
   },
   {
     path: "/sites/jewelry",
-    name: "Multi-site storefront (jewelry template)",
+    name: "Multi-site storefront (jewelry theme)",
     expects: [{ type: "status", value: 200 }]
   },
   {
-    path: "/sites/jewelry/admin",
-    name: "Multi-site admin login",
-    expects: [{ type: "status", value: 200 }]
+    path: "/sites/sunvolt",
+    name: "Solar panels flagship storefront",
+    expects: [
+      { type: "status", value: 200 },
+      { type: "body-contains", value: "SunVolt" }
+    ]
   },
   {
     path: "/nonexistent-route-xyz",

@@ -8,6 +8,7 @@ import { ShoppingBag, Store, ArrowLeft, PackageOpen } from "lucide-react";
 import { getSiteBySlug, CentralSite, listSiteProducts } from "@/lib/multi-site/api";
 import { useCartStore } from "@/store/cart";
 import { TEMPLATES } from "@/lib/templates/templates";
+import type { Template } from "@/lib/templates/types";
 import { formatPrice } from "@/lib/format";
 import { toast } from "@/components/toaster";
 import { Skeleton } from "@/components/skeletons";
@@ -109,6 +110,20 @@ export default function PerSiteStorefront() {
     );
   }
 
+  // Solar panels theme uses an enhanced storefront layout.
+  if (template.id === "solar-panels") {
+    return (
+      <SolarStorefront
+        site={site}
+        template={template}
+        products={products}
+        addItem={addItem}
+        openCart={openCart}
+        cartCount={cartCount}
+      />
+    );
+  }
+
   const c = template.colors;
   const t = template.typography;
   const b = template.branding;
@@ -144,10 +159,10 @@ export default function PerSiteStorefront() {
             <span className="site-storefront__cart-count">{cartCount}</span>
           </button>
           <Link
-            href={`/sites/${slug}/admin`}
+            href="/central/dashboard"
             className="site-storefront__admin-link"
           >
-            <Store size={14} aria-hidden="true" /> Войти как админ
+            <Store size={14} aria-hidden="true" /> Super Admin
           </Link>
         </div>
       </header>
@@ -179,12 +194,12 @@ export default function PerSiteStorefront() {
         {products.length === 0 ? (
           <div className="site-storefront__empty">
             <PackageOpen size={32} aria-hidden="true" />
-            <p>Пока нет товаров. Добавьте их через админ-панель.</p>
+            <p>Пока нет товаров. Добавьте их через супер-админ панель.</p>
             <Link
-              href={`/sites/${slug}/admin`}
+              href="/central/dashboard"
               className="site-storefront__cta"
             >
-              Открыть админ-панель
+              Открыть супер-админ панель
             </Link>
           </div>
         ) : (
@@ -258,7 +273,231 @@ export default function PerSiteStorefront() {
         </div>
         <p className="muted site-storefront__footer-powered">
           Powered by <Link href="/">Sun.store</Link> ·{" "}
-          <Link href={`/sites/${slug}/admin`}>Админ-панель</Link>
+          <Link href="/central/dashboard">Super Admin</Link>
+        </p>
+      </footer>
+    </main>
+  );
+}
+
+// ===========================================================================
+// SolarStorefront — flagship solar panels theme (amber-on-charcoal)
+// ===========================================================================
+
+function SolarStorefront({
+  site, template, products, addItem, openCart, cartCount
+}: {
+  site: CentralSite;
+  template: Template;
+  products: Product[];
+  addItem: (p: Product) => void;
+  openCart: () => void;
+  cartCount: number;
+}) {
+  const c = template.colors;
+  const b = template.branding;
+  const hero = template.heroCopy;
+
+  // Group products by category for the catalog section.
+  const byCategory = (products.length > 0 ? products : template.products.map((p) => ({
+    id: Number(p.id.replace(/\D/g, "") || 0),
+    slug: p.slug,
+    title_ru: p.title,
+    description_ru: p.description,
+    price_kopecks: p.price_kopecks,
+    sku: p.sku,
+    stock_quantity: p.stock_quantity,
+    images: p.images,
+    category_name_ru: p.category_id,
+    is_active: p.is_active
+  }) as unknown as Product)).reduce((acc, p) => {
+    const cat = (p as any).category_name_ru || (p as any).category || "general";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(p);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+  const themeVars = {
+    ["--site-bg"]: c.background,
+    ["--site-surface"]: c.surface,
+    ["--site-surface-alt"]: c.surfaceAlt,
+    ["--site-text"]: c.text,
+    ["--site-text-muted"]: c.textMuted,
+    ["--site-accent"]: c.accent,
+    ["--site-accent-text"]: c.accentText,
+    ["--site-border"]: c.border,
+  } as React.CSSProperties;
+
+  return (
+    <main
+      className="site-storefront solar-storefront"
+      style={themeVars}
+      data-template={template.id}
+    >
+      <header className="solar-header">
+        <Link href={`/sites/${site.slug}`} className="solar-brand">
+          <span className="solar-brand__mark" aria-hidden="true" style={{ color: c.accent }}>
+            {b.logoMark}
+          </span>
+          <div>
+            <p className="solar-brand__name">{b.storeName}</p>
+            <p className="solar-brand__tagline">{b.tagline}</p>
+          </div>
+        </Link>
+        <nav className="solar-nav">
+          <a href="#catalog">Каталог</a>
+          <a href="#benefits">Преимущества</a>
+          <a href="#calculator">Калькулятор</a>
+          <a href="#contact">Контакты</a>
+        </nav>
+        <div className="solar-actions">
+          <button onClick={openCart} className="solar-cart" aria-label={`Корзина, ${cartCount} товаров`}>
+            <ShoppingBag size={16} /> <span>Корзина</span>
+            <span className="solar-cart__count">{cartCount}</span>
+          </button>
+          <Link href="/central/dashboard" className="solar-admin-link">
+            Super Admin
+          </Link>
+        </div>
+      </header>
+
+      {/* HERO */}
+      <section className="solar-hero">
+        <div className="solar-hero__bg" aria-hidden="true" />
+        <div className="solar-hero__copy">
+          <p className="solar-hero__eyebrow">{hero.eyebrow}</p>
+          <h1 className="solar-hero__title">{hero.headline}</h1>
+          <p className="solar-hero__subhead">{hero.subhead}</p>
+          <div className="solar-hero__actions">
+            <a href="#catalog" className="solar-btn solar-btn--primary">{hero.ctaPrimary}</a>
+            <a href="#calculator" className="solar-btn solar-btn--ghost">{hero.ctaSecondary}</a>
+          </div>
+          <div className="solar-hero__stats">
+            <div><strong>25 лет</strong><span>гарантия на панели</span></div>
+            <div><strong>3 года</strong><span>гарантия на монтаж</span></div>
+            <div><strong>90%</strong><span>экономия на счетах</span></div>
+          </div>
+        </div>
+      </section>
+
+      {/* BENEFITS */}
+      <section id="benefits" className="solar-section">
+        <h2 className="solar-section__title">Почему выбирают нас</h2>
+        <div className="solar-benefits">
+          <article className="solar-benefit">
+            <div className="solar-benefit__icon" style={{ color: c.accent }}>☀</div>
+            <h3>Высокий КПД</h3>
+            <p>Монокристаллические панели с КПД до 21.2% — максимум энергии с каждого квадратного метра кровли.</p>
+          </article>
+          <article className="solar-benefit">
+            <div className="solar-benefit__icon" style={{ color: c.accent }}>⚙</div>
+            <h3>Под ключ</h3>
+            <p>Проектирование, поставка оборудования, монтаж и пусконаладка. Без скрытых платежей.</p>
+          </article>
+          <article className="solar-benefit">
+            <div className="solar-benefit__icon" style={{ color: c.accent }}>⚡</div>
+            <h3>Резервное питание</h3>
+            <p>Гибридные инверторы с аккумуляторами — ваш дом не останется без электричества при отключениях.</p>
+          </article>
+          <article className="solar-benefit">
+            <div className="solar-benefit__icon" style={{ color: c.accent }}>🔧</div>
+            <h3>Сервис 24/7</h3>
+            <p>Удалённый мониторинг генерации через Wi-Fi, выезд сервисной бригады в течение 48 часов.</p>
+          </article>
+        </div>
+      </section>
+
+      {/* CATALOG */}
+      <section id="catalog" className="solar-section">
+        <h2 className="solar-section__title">Каталог оборудования</h2>
+        {Object.keys(byCategory).length === 0 ? (
+          <div className="solar-empty">
+            <PackageOpen size={32} aria-hidden="true" />
+            <p>Каталог скоро будет наполнен. Загляните позже или откройте супер-админ панель, чтобы добавить товары.</p>
+          </div>
+        ) : (
+          Object.entries(byCategory).map(([cat, items]) => {
+            const catMeta = template.categories.find((x) => x.id === cat);
+            return (
+              <div key={cat} className="solar-cat">
+                <h3 className="solar-cat__title">
+                  {catMeta?.name || cat}
+                  <span className="solar-cat__count">{items.length} тов.</span>
+                </h3>
+                <div className="solar-grid">
+                  {items.map((p) => {
+                    const outOfStock = (p as any).stock_quantity <= 0;
+                    const img = p.images?.[0];
+                    return (
+                      <article key={p.id} className="solar-product">
+                        <div className="solar-product__media">
+                          {img ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={img} alt={p.title_ru || p.slug} loading="lazy" />
+                          ) : (
+                            <div className="solar-product__placeholder">{b.logoMark}</div>
+                          )}
+                          {outOfStock && (
+                            <span className="solar-product__badge">Нет в наличии</span>
+                          )}
+                        </div>
+                        <div className="solar-product__body">
+                          <p className="solar-product__title">{p.title_ru || p.slug}</p>
+                          {p.description_ru && (
+                            <p className="solar-product__desc">{p.description_ru}</p>
+                          )}
+                          <div className="solar-product__foot">
+                            <span className="solar-product__price">
+                              {formatPrice(p.price_kopecks)}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (outOfStock) { toast.warning("Нет в наличии"); return; }
+                                addItem(p);
+                                toast.success("Добавлено в корзину", p.title_ru);
+                              }}
+                              disabled={outOfStock}
+                              className="solar-btn solar-btn--primary solar-btn--sm"
+                            >
+                              {outOfStock ? "Нет" : "В корзину"}
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </section>
+
+      {/* CALCULATOR CTA */}
+      <section id="calculator" className="solar-section solar-section--cta">
+        <div className="solar-cta-card">
+          <h2>Рассчитайте окупаемость за 60 секунд</h2>
+          <p>Введите ежемесячный счёт за электричество — покажем, за сколько лет окупится солнечная станция.</p>
+          <Link href="/central/dashboard" className="solar-btn solar-btn--primary">
+            Оставить заявку
+          </Link>
+        </div>
+      </section>
+
+      {/* CONTACT FOOTER */}
+      <footer id="contact" className="solar-footer">
+        <div>
+          <p className="solar-footer__brand">{b.logoMark} {b.storeName}</p>
+          <p className="solar-footer__tagline">{b.tagline}</p>
+        </div>
+        <div className="solar-footer__contact">
+          <p>Тел: <a href="tel:+78001234567">8 800 123-45-67</a></p>
+          <p>Email: <a href="mailto:hello@sunvolt.ru">hello@sunvolt.ru</a></p>
+          <p>Пн–Вс: 9:00 — 21:00</p>
+        </div>
+        <p className="solar-footer__powered">
+          Powered by <Link href="/">Sun.store</Link> ·{" "}
+          <Link href="/central/dashboard">Super Admin</Link>
         </p>
       </footer>
     </main>

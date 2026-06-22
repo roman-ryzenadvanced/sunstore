@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Plus, RefreshCw } from "lucide-react";
+import { LogOut, Mail, Plus, RefreshCw, Settings } from "lucide-react";
 
 import {
   listCentralSites,
@@ -75,10 +75,16 @@ export default function CentralDashboardPage() {
     <main className="central-shell">
       <header className="central-header">
         <div>
-          <p className="central-header__eyebrow">Sun.store Platform</p>
-          <h1 className="central-header__title">Центральная панель</h1>
+          <p className="central-header__eyebrow">Sun.store Super Admin</p>
+          <h1 className="central-header__title">Единая супер-админ панель</h1>
+          <p style={{ color: "#888", fontSize: 12, marginTop: 4 }}>
+            Управляйте всеми магазинами, их темами, товарами, заказами и email-настройками отсюда.
+          </p>
         </div>
         <div className="central-header__actions">
+          <Link href="/central/email" className="central-btn central-btn--ghost">
+            <Mail size={14} /> Email платформы
+          </Link>
           <Link href="/central/setup" className="central-btn central-btn--primary">
             <Plus size={14} /> Создать магазин
           </Link>
@@ -152,9 +158,12 @@ export default function CentralDashboardPage() {
                 <article key={s.id} className="central-site-card">
                   <div className="central-site-card__head">
                     <div>
-                      <p className="central-site-card__name">{s.name}</p>
+                      <p className="central-site-card__name">
+                        <span style={{ marginRight: 8 }}>{s.logo_mark || template?.branding?.logoMark}</span>
+                        {s.name}
+                      </p>
                       <p className="central-site-card__meta">
-                        slug: {s.slug} · niche: {s.niche}
+                        slug: {s.slug} · theme: {s.template_id}
                       </p>
                     </div>
                     <span
@@ -175,23 +184,17 @@ export default function CentralDashboardPage() {
                   </div>
                   <div className="central-site-card__actions">
                     <Link
-                      href={`/sites/${s.slug}`}
-                      target="_blank"
+                      href={`/central/sites/${s.id}`}
                       className="central-site-card__action central-site-card__action--primary"
                     >
-                      Открыть витрину
+                      <Settings size={12} /> Управлять
                     </Link>
                     <Link
-                      href={`/sites/${s.slug}/admin`}
-                      className="central-site-card__action central-site-card__action--warning"
-                    >
-                      Админ панель
-                    </Link>
-                    <Link
-                      href={`/central/sites/${s.id}/admins`}
+                      href={`/sites/${s.slug}`}
+                      target="_blank"
                       className="central-site-card__action"
                     >
-                      Команда
+                      Открыть витрину
                     </Link>
                     <button
                       onClick={() => toggleStatus(s)}

@@ -59,6 +59,73 @@ export interface CreateSiteInput {
   custom_domain?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Super-admin types (new consolidated API surface)
+// ---------------------------------------------------------------------------
+
+export interface ShopProduct {
+  id: number;
+  site_id: number;
+  slug: string;
+  title: string;
+  description: string;
+  price_kopecks: number;
+  sku: string;
+  stock_quantity: number;
+  images: string[];
+  category: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShopOrder {
+  id: number;
+  site_id: number;
+  tbank_order_id: string;
+  tbank_payment_id?: string | null;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  total_amount_kopecks: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailConfigDTO {
+  configured: boolean;
+  id?: number;
+  scope?: "platform" | "site";
+  site_id?: number | null;
+  provider?: "smtp" | "gmail";
+  from_address?: string;
+  from_name?: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_username?: string;
+  smtp_password?: string; // masked when read
+  use_tls?: boolean;
+  use_ssl?: boolean;
+  reply_to?: string;
+  is_active?: boolean;
+  updated_at?: string;
+}
+
+export interface EmailConfigInput {
+  provider: "smtp" | "gmail";
+  from_address: string;
+  from_name?: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_username?: string;
+  smtp_password?: string; // empty = keep existing
+  use_tls?: boolean;
+  use_ssl?: boolean;
+  reply_to?: string;
+  is_active?: boolean;
+}
+
 async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -161,6 +228,141 @@ export async function removeSiteAdmin(token: string, siteId: number, adminId: nu
   return request(`/central/sites/${siteId}/admins/${adminId}`, {
     method: "DELETE",
   }, token);
+}
+
+// ---------------------------------------------------------------------------
+// Super-admin consolidated shop management
+// ---------------------------------------------------------------------------
+
+export async function getShop(token: string, id: number): Promise<CentralSite | null> {
+  try {
+    return await request<CentralSite>(`/central/sites/${id}`, {}, token);
+  } catch {
+    return null;
+  }
+}
+
+export async function updateShopTheme(token: string, id: number, templateId: string): Promise<void> {
+  return request(`/central/sites/${id}/theme`, {
+    method: "PATCH",
+    body: JSON.stringify({ template_id: templateId }),
+  }, token);
+}
+
+export async function updateShopBranding(token: string, id: number, body: {
+  name?: string;
+  tagline?: string;
+  primary_color?: string;
+  logo_mark?: string;
+}): Promise<void> {
+  return request(`/central/sites/${id}/branding`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  }, token);
+}
+
+// --- Products (super-admin CRUD) ---
+
+export async function listShopProducts(token: string, id: number): Promise<ShopProduct[]> {
+  try {
+    const r = await request<{ items: ShopProduct[] }>(`/central/sites/${id}/products`, {}, token);
+    return r.items || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createShopProduct(token: string, id: number, p: Partial<ShopProduct>): Promise<ShopProduct> {
+  return request(`/central/sites/${id}/products`, {
+    method: "POST",
+    body: JSON.stringify(p),
+  }, token);
+}
+
+export async function updateShopProduct(token: string, id: number, productId: number, p: Partial<ShopProduct>): Promise<ShopProduct> {
+  return request(`/central/sites/${id}/products/${productId}`, {
+    method: "PUT",
+    body: JSON.stringify(p),
+  }, token);
+}
+
+export async function deleteShopProduct(token: string, id: number, productId: number): Promise<void> {
+  return request(`/central/sites/${id}/products/${productId}`, {
+    method: "DELETE",
+  }, token);
+}
+
+// --- Orders ---
+
+export async function listShopOrders(token: string, id: number): Promise<ShopOrder[]> {
+  try {
+    const r = await request<{ items: ShopOrder[] }>(`/central/sites/${id}/orders`, {}, token);
+    return r.items || [];
+  } catch {
+    return [];
+  }
+}
+
+// --- Email config ---
+
+export async function getPlatformEmailConfig(token: string): Promise<EmailConfigDTO> {
+  try {
+    return await request<EmailConfigDTO>(`/central/email-config`, {}, token);
+  } catch {
+    return { configured: false };
+  }
+}
+
+export async function upsertPlatformEmailConfig(token: string, input: EmailConfigInput): Promise<EmailConfigDTO> {
+  return request(`/central/email-config`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  }, token);
+}
+
+export async function testPlatformEmail(token: string, to: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await request(`/central/email-config/test`, {
+      method: "POST",
+      body: JSON.stringify({ to }),
+    }, token);
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "send_failed" };
+  }
+}
+
+export async function getSiteEmailConfig(token: string, siteId: number): Promise<EmailConfigDTO> {
+  try {
+    return await request<EmailConfigDTO>(`/central/sites/${siteId}/email-config`, {}, token);
+  } catch {
+    return { configured: false };
+  }
+}
+
+export async function upsertSiteEmailConfig(token: string, siteId: number, input: EmailConfigInput): Promise<EmailConfigDTO> {
+  return request(`/central/sites/${siteId}/email-config`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  }, token);
+}
+
+export async function deleteSiteEmailConfig(token: string, siteId: number): Promise<void> {
+  return request(`/central/sites/${siteId}/email-config`, {
+    method: "DELETE",
+  }, token);
+}
+
+export async function testSiteEmail(token: string, siteId: number, to: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await request(`/central/sites/${siteId}/email-config/test`, {
+      method: "POST",
+      body: JSON.stringify({ to }),
+    }, token);
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "send_failed" };
+  }
 }
 
 // ----- Mock fallback (in-memory, dev-only) -----

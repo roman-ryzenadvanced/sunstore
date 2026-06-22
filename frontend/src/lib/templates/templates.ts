@@ -14,6 +14,7 @@
  */
 
 import type { Template } from "./types";
+import { SOLAR_PANELS_TEMPLATE } from "./solar-panels";
 
 const baseTypography = {
   bodyFont: "'Manrope', system-ui, sans-serif",
@@ -30,6 +31,9 @@ const baseSpacing = {
 };
 
 export const TEMPLATES: Template[] = [
+  // ========== 0. SOLAR PANELS (MAIN THEME) ==========
+  SOLAR_PANELS_TEMPLATE,
+
   // ========== 1. JEWELRY ==========
   {
     id: "jewelry",

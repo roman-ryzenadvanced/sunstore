@@ -22,9 +22,11 @@ export default function CentralSetupPage() {
   const [step, setStep] = useState<"niche" | "details" | "owner" | "review">(
     "niche"
   );
-  const [templateId, setTemplateId] = useState<string>("");
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
+  // Default to solar-panels (the main theme) so the first shop the operator
+  // creates is the flagship storefront unless they choose otherwise.
+  const [templateId, setTemplateId] = useState<string>("solar-panels");
+  const [name, setName] = useState("SunVolt");
+  const [slug, setSlug] = useState("sunvolt");
   const [tagline, setTagline] = useState("");
   const [primaryColor, setPrimaryColor] = useState("");
   const [ownerUsername, setOwnerUsername] = useState("owner");
@@ -60,6 +62,13 @@ export default function CentralSetupPage() {
     if (step === "niche") {
       if (!templateId) return setErr("Выберите шаблон");
       setErr(null);
+      // Auto-fill name + slug from the selected template if the user hasn't customized them.
+      if (template && (!name || name === "SunVolt" || name === TEMPLATES.find((t) => t.id === "solar-panels")?.branding.storeName)) {
+        setName(template.branding.storeName);
+      }
+      if (template && (!slug || slug === "sunvolt")) {
+        setSlug(slugify(template.branding.storeName));
+      }
       setStep("details");
     } else if (step === "details") {
       if (!name) return setErr("Введите название магазина");

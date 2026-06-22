@@ -428,6 +428,41 @@
   color: #aaa;
 }
 
+/* Tabs (shop detail page) */
+.central-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid #222;
+  overflow-x: auto;
+}
+
+.central-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 180ms ease, border-color 180ms ease;
+}
+
+.central-tab:hover {
+  color: #fff;
+}
+
+.central-tab--active {
+  color: #00ff88;
+  border-bottom-color: #00ff88;
+}
+
 @media (max-width: 1040px) {
   .central-stats {
     grid-template-columns: repeat(2, 1fr);
