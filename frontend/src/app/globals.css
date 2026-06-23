@@ -764,6 +764,13 @@ main:focus-visible {
   gap: 10px;
   padding: 14px;
   flex: 1;
+  /* Allow children to shrink below their min-content so nothing is clipped
+     by the card's overflow:hidden (e.g. the nowrap price or blue CTA). */
+  min-width: 0;
+}
+
+.product-card__body > * {
+  min-width: 0;
 }
 
 .product-card__title h3 {
@@ -801,17 +808,18 @@ main:focus-visible {
   justify-content: space-between;
   gap: 8px;
   margin-top: auto;
+  min-width: 0;
 }
 
 .product-card__price-block {
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
 
 .product-card__price {
   font-size: 1.28rem;
   font-weight: 700;
-  white-space: nowrap;
   color: var(--text);
 }
 
@@ -833,10 +841,15 @@ main:focus-visible {
   display: flex;
   gap: 8px;
   padding-top: 4px;
+  min-width: 0;
 }
 
 .product-card__actions .button {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  /* keep CTA labels readable but allow wrapping on narrow cards */
+  white-space: normal;
+  text-align: center;
 }
 
 .filter-strip {
@@ -1205,10 +1218,13 @@ main:focus-visible {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .product-buy__title-row h1 {
   margin: 6px 0 0;
+  flex: 1 1 auto;
+  min-width: 0;
   font-family: var(--font-display), serif;
   font-size: clamp(1.8rem, 2.6vw, 2.4rem);
   font-weight: 600;
