@@ -16,15 +16,25 @@ type PaymentNotificationVerifier interface {
 
 // PaymentNotificationUseCase validates and applies asynchronous payment updates.
 type PaymentNotificationUseCase struct {
-	orders   domain.OrderRepository
+	orders     domain.OrderRepository
+	siteOrders interface {
+		UpdateSiteOrderStatusByTBankOrderID(ctx context.Context, tbankOrderID string, paymentID *string, status domain.OrderStatus, raw json.RawMessage) error
+	}
 	verifier PaymentNotificationVerifier
 }
 
 // NewPaymentNotificationUseCase constructs a PaymentNotificationUseCase.
-func NewPaymentNotificationUseCase(orders domain.OrderRepository, verifier PaymentNotificationVerifier) *PaymentNotificationUseCase {
+func NewPaymentNotificationUseCase(
+	orders domain.OrderRepository,
+	siteOrders interface {
+		UpdateSiteOrderStatusByTBankOrderID(ctx context.Context, tbankOrderID string, paymentID *string, status domain.OrderStatus, raw json.RawMessage) error
+	},
+	verifier PaymentNotificationVerifier,
+) *PaymentNotificationUseCase {
 	return &PaymentNotificationUseCase{
-		orders:   orders,
-		verifier: verifier,
+		orders:     orders,
+		siteOrders: siteOrders,
+		verifier:   verifier,
 	}
 }
 
@@ -52,7 +62,13 @@ func (uc *PaymentNotificationUseCase) HandleTBankNotification(ctx context.Contex
 		paymentID = &value
 	}
 	finalStatus := mapNotificationStatus(statusValue, success)
-	return uc.orders.UpdateStatusByTBankOrderID(ctx, orderID, paymentID, finalStatus, raw)
+	if err := uc.orders.UpdateStatusByTBankOrderID(ctx, orderID, paymentID, finalStatus, raw); err != nil {
+		if err == domain.ErrNotFound && uc.siteOrders != nil {
+			return uc.siteOrders.UpdateSiteOrderStatusByTBankOrderID(ctx, orderID, paymentID, finalStatus, raw)
+		}
+		return err
+	}
+	return nil
 }
 
 func mapNotificationStatus(status string, success bool) domain.OrderStatus {

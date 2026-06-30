@@ -34,9 +34,9 @@ export default async function CheckoutStatusPage({
       : status === "mock"
       ? {
           eyebrow: "Демо-режим",
-          title: "Заказ создан (mock)",
+          title: "Заказ создан в demo-режиме",
           description:
-            "Backend недоступен, поэтому платёж не был инициирован. При подключённом API сюда вернёт T-Bank flow с реальной ссылкой на оплату.",
+            "Платёж обработан локальным demo-gateway. Для sandbox или live-режима подключите реальные T-Bank credentials и переключите режим в backend-конфиге.",
           action: "Вернуться в каталог",
           href: "/catalog" as Route,
           tone: "pending" as const

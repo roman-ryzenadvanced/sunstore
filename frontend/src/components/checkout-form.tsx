@@ -38,6 +38,16 @@ export function CheckoutForm() {
   );
 
   const isEmpty = items.length === 0;
+  const siteScope = useMemo(() => {
+    const siteSlugs = Array.from(
+      new Set(items.map((item) => item.product.site_slug).filter(Boolean))
+    ) as string[];
+    const hasGlobalItems = items.some((item) => !item.product.site_slug);
+    return {
+      siteSlug: siteSlugs.length === 1 ? siteSlugs[0] : undefined,
+      mixed: siteSlugs.length > 1 || (siteSlugs.length === 1 && hasGlobalItems)
+    };
+  }, [items]);
 
   function validateField(field: "name" | "email" | "phone", value: string) {
     setErrors((prev) => {
@@ -71,6 +81,13 @@ export function CheckoutForm() {
       setError("Добавьте товары в корзину перед оформлением.");
       return;
     }
+    if (siteScope.mixed) {
+      const message =
+        "Нельзя оформить одним заказом товары из разных магазинов и общего каталога.";
+      setError(message);
+      toast.error("Разделите корзину", message);
+      return;
+    }
 
     setLoading(true);
 
@@ -79,6 +96,7 @@ export function CheckoutForm() {
         customer_name: customerName.trim(),
         email: email.trim(),
         phone: phone.trim(),
+        site_slug: siteScope.siteSlug,
         items: items.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity
@@ -132,6 +150,9 @@ export function CheckoutForm() {
           <p className="muted">
             Мы отправим подтверждение и ссылку на оплату через T-Bank.
           </p>
+          {siteScope.siteSlug ? (
+            <p className="muted">Магазин: <code>{siteScope.siteSlug}</code></p>
+          ) : null}
         </div>
 
         <label className={`field ${errors.name ? "field--error" : ""}`}>

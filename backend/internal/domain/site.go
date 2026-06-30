@@ -77,18 +77,18 @@ type SiteProduct struct {
 
 // SiteOrder is an order tied to a site.
 type SiteOrder struct {
-	ID                 int64          `json:"id"`
-	SiteID             int64          `json:"site_id"`
-	TBankOrderID       string         `json:"tbank_order_id"`
-	TBankPaymentID     *string        `json:"tbank_payment_id,omitempty"`
-	CustomerName       string         `json:"customer_name"`
-	CustomerEmail      string         `json:"customer_email"`
-	CustomerPhone      string         `json:"customer_phone"`
-	TotalAmountKopecks int64          `json:"total_amount_kopecks"`
-	Status             OrderStatus    `json:"status"`
-	RawTBankResponse   map[string]any `json:"raw_tbank_response,omitempty"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
+	ID                 int64           `json:"id"`
+	SiteID             int64           `json:"site_id"`
+	TBankOrderID       string          `json:"tbank_order_id"`
+	TBankPaymentID     *string         `json:"tbank_payment_id,omitempty"`
+	CustomerName       string          `json:"customer_name"`
+	CustomerEmail      string          `json:"customer_email"`
+	CustomerPhone      string          `json:"customer_phone"`
+	TotalAmountKopecks int64           `json:"total_amount_kopecks"`
+	Status             OrderStatus     `json:"status"`
+	RawTBankResponse   map[string]any  `json:"raw_tbank_response,omitempty"`
+	CreatedAt          time.Time       `json:"created_at"`
+	UpdatedAt          time.Time       `json:"updated_at"`
 	Items              []SiteOrderItem `json:"items,omitempty"`
 
 	// Populated only by cross-store queries (JOIN sites). site_id is always set.
@@ -98,11 +98,30 @@ type SiteOrder struct {
 
 // SiteOrderItem is a line item snapshot of a site order.
 type SiteOrderItem struct {
-	ID                    int64 `json:"id"`
-	OrderID               int64 `json:"order_id"`
+	ID                    int64  `json:"id"`
+	OrderID               int64  `json:"order_id"`
 	ProductID             *int64 `json:"product_id,omitempty"`
-	Quantity              int   `json:"quantity"`
-	PriceAtPurchaseKopeck int64 `json:"price_at_purchase_kopecks"`
+	Quantity              int    `json:"quantity"`
+	PriceAtPurchaseKopeck int64  `json:"price_at_purchase_kopecks"`
+}
+
+// CreateSiteOrderInput is the repository contract for inserting a site order.
+type CreateSiteOrderInput struct {
+	SiteID             int64
+	TBankOrderID       string
+	CustomerName       string
+	CustomerEmail      string
+	CustomerPhone      string
+	TotalAmountKopecks int64
+	Status             OrderStatus
+	Items              []SiteOrderItemCreateInput
+}
+
+// SiteOrderItemCreateInput stores the data needed for site line-item insertion.
+type SiteOrderItemCreateInput struct {
+	ProductID              int64
+	Quantity               int
+	PriceAtPurchaseKopecks int64
 }
 
 // SiteFilter narrows the result set when listing sites.

@@ -18,6 +18,8 @@ import type {
 } from "@/types/api";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8080/api/v1";
+const ENABLE_DEMO_FALLBACKS =
+  process.env.NEXT_PUBLIC_ENABLE_DEMO_FALLBACKS === "true";
 
 export class ApiError extends Error {
   constructor(
@@ -151,7 +153,10 @@ export async function listStorefrontProducts(query: CatalogQuery = {}) {
         offset: query.offset
       })}`
     );
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     return filterProducts(
       mockProducts.filter((product) => product.is_active),
       query
@@ -162,7 +167,10 @@ export async function listStorefrontProducts(query: CatalogQuery = {}) {
 export async function getStorefrontProduct(slug: string) {
   try {
     return await request<Product>(`/products/${slug}`);
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     const product = mockProducts.find((entry) => entry.slug === slug);
     if (!product) {
       throw new ApiError("Товар не найден", 404);
@@ -177,7 +185,10 @@ export async function adminLogin(username: string, password: string) {
       method: "POST",
       body: JSON.stringify({ username, password })
     });
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     if (!username.trim() || !password.trim()) {
       throw new ApiError("Введите логин и пароль", 400);
     }
@@ -200,7 +211,10 @@ export async function listAdminProducts(
       })}`,
       { token }
     );
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     return filterProducts(mockProducts, query);
   }
 }
@@ -212,7 +226,10 @@ export async function createAdminProduct(token: string, input: UpsertProductInpu
       token,
       body: JSON.stringify(input)
     });
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     return {
       id: Date.now(),
       category_id: input.category_id,
@@ -243,7 +260,10 @@ export async function updateAdminProduct(
       token,
       body: JSON.stringify(input)
     });
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     return {
       id,
       category_id: input.category_id,
@@ -269,7 +289,10 @@ export async function deleteAdminProduct(token: string, id: number) {
       method: "DELETE",
       token
     });
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     return { success: true, id };
   }
   return { success: true, id };
@@ -283,7 +306,10 @@ export async function listAdminOrders(token: string, status?: OrderStatus) {
       })}`,
       { token }
     );
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     return status ? mockOrders.filter((order) => order.status === status) : mockOrders;
   }
 }
@@ -294,10 +320,13 @@ export async function checkoutInit(payload: CheckoutRequest) {
       method: "POST",
       body: JSON.stringify(payload)
     });
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) {
+      throw error;
+    }
     return {
       success: true,
-      payment_url: "/checkout/status?status=mock",
+      payment_url: `/checkout/status?status=mock&order=MOCK-${Date.now()}`,
       order_id: `MOCK-${Date.now()}`
     };
   }

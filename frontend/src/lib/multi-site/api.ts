@@ -7,6 +7,8 @@ import { Product } from "@/types/api";
 import { Template } from "@/lib/templates/types";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8080/api/v1";
+const ENABLE_DEMO_FALLBACKS =
+  process.env.NEXT_PUBLIC_ENABLE_DEMO_FALLBACKS === "true";
 
 function getApiBaseUrl(): string {
   return (
@@ -173,7 +175,8 @@ export async function listCentralSites(token: string, q?: { status?: string; nic
     const suffix = params.toString() ? `?${params}` : "";
     const r = await request<{ items: CentralSite[] }>(`/central/sites${suffix}`, {}, token);
     return r.items;
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
     return mockCentralSites();
   }
 }
@@ -195,16 +198,20 @@ export async function setSiteStatus(token: string, id: number, status: CentralSi
 export async function getSiteBySlug(slug: string): Promise<CentralSite | null> {
   try {
     return await request<CentralSite>(`/sites/${encodeURIComponent(slug)}`);
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
     return mockCentralSites().find((s) => s.slug === slug) || null;
   }
 }
 
 export async function listSiteProducts(slug: string): Promise<Product[]> {
   try {
-    // Backend endpoint: /api/v1/sites/{slug}/products
-    return await request<Product[]>(`/sites/${encodeURIComponent(slug)}/products`);
-  } catch {
+    const items = await request<Array<ShopProduct | Product>>(
+      `/sites/${encodeURIComponent(slug)}/products`
+    );
+    return items.map((item: any) => normalizeStorefrontProduct(item, slug));
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
     return [];
   }
 }
@@ -243,7 +250,8 @@ export async function removeSiteAdmin(token: string, siteId: number, adminId: nu
 export async function getShop(token: string, id: number): Promise<CentralSite | null> {
   try {
     return await request<CentralSite>(`/central/sites/${id}`, {}, token);
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
     return null;
   }
 }
@@ -273,7 +281,8 @@ export async function listShopProducts(token: string, id: number): Promise<ShopP
   try {
     const r = await request<{ items: ShopProduct[] }>(`/central/sites/${id}/products`, {}, token);
     return r.items || [];
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
     return [];
   }
 }
@@ -304,7 +313,8 @@ export async function listShopOrders(token: string, id: number): Promise<ShopOrd
   try {
     const r = await request<{ items: ShopOrder[] }>(`/central/sites/${id}/orders`, {}, token);
     return r.items || [];
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
     return [];
   }
 }
@@ -329,7 +339,8 @@ export async function listAllShopOrders(
       {},
       token
     );
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
     return { items: [], total: 0 };
   }
 }
@@ -353,7 +364,8 @@ export async function listAllShopProducts(
       {},
       token
     );
-  } catch {
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
     return { items: [], total: 0 };
   }
 }
@@ -644,4 +656,26 @@ export function persistMockSite(site: CentralSite) {
   if (existing >= 0) all[existing] = site;
   else all.unshift(site);
   window.localStorage.setItem(MOCK_SITES_KEY, JSON.stringify(all));
+}
+
+function normalizeStorefrontProduct(item: Partial<ShopProduct> & Partial<Product>, slug: string): Product {
+  return {
+    id: Number(item.id || 0),
+    site_id: item.site_id ?? null,
+    site_slug: item.site_slug ?? slug,
+    site_name: item.site_name ?? null,
+    category_id: item.category_id ?? null,
+    category_slug: item.category_slug ?? item.category ?? null,
+    category_name_ru: item.category_name_ru ?? item.category ?? null,
+    slug: item.slug || "",
+    title_ru: item.title_ru ?? item.title ?? "",
+    description_ru: item.description_ru ?? item.description ?? "",
+    price_kopecks: Number(item.price_kopecks || 0),
+    sku: item.sku || "",
+    stock_quantity: Number(item.stock_quantity || 0),
+    images: Array.isArray(item.images) ? item.images : [],
+    is_active: Boolean(item.is_active),
+    created_at: item.created_at || new Date(0).toISOString(),
+    updated_at: item.updated_at || new Date(0).toISOString()
+  };
 }

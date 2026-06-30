@@ -78,6 +78,7 @@ func (p PostgresConfig) DSN() string {
 
 // TBankConfig carries the Internet-Acquiring credentials and endpoints.
 type TBankConfig struct {
+	Mode            string        // "live" | "sandbox" | "demo"
 	TerminalKey     string        // shop identifier
 	Password        string        // terminal password used for token signing
 	APIBaseURL      string        // base URL for Init/Confirm/CheckStatus calls
@@ -86,6 +87,9 @@ type TBankConfig struct {
 	ReturnURL       string        // customer redirect after success
 	FailureURL      string        // customer redirect after failure
 }
+
+// IsDemo reports whether the payment layer should use the local demo gateway.
+func (t TBankConfig) IsDemo() bool { return strings.EqualFold(strings.TrimSpace(t.Mode), "demo") }
 
 // JWTConfig controls admin-portal token issuance and validation.
 type JWTConfig struct {
@@ -118,6 +122,7 @@ func Load() (*Config, error) {
 			ConnMaxLifetime: getDuration("POSTGRES_CONN_MAX_LIFETIME", 30*time.Minute),
 		},
 		TBank: TBankConfig{
+			Mode:            getString("TBANK_MODE", "demo"),
 			TerminalKey:     os.Getenv("TBANK_TERMINAL_KEY"),
 			Password:        os.Getenv("TBANK_PASSWORD"),
 			APIBaseURL:      getString("TBANK_API_BASE_URL", "https://securepay.tinkoff.ru/v2"),
@@ -185,11 +190,16 @@ func (c *Config) validate() error {
 		errs = append(errs, "POSTGRES_MAX_IDLE_CONNS must be 0..MaxOpenConns")
 	}
 
-	if c.TBank.TerminalKey == "" {
-		errs = append(errs, "TBANK_TERMINAL_KEY is required")
+	switch strings.ToLower(strings.TrimSpace(c.TBank.Mode)) {
+	case "", "live", "sandbox", "demo":
+	default:
+		errs = append(errs, "TBANK_MODE must be one of: live, sandbox, demo")
 	}
-	if c.TBank.Password == "" {
-		errs = append(errs, "TBANK_PASSWORD is required")
+	if !c.TBank.IsDemo() && c.TBank.TerminalKey == "" {
+		errs = append(errs, "TBANK_TERMINAL_KEY is required unless TBANK_MODE=demo")
+	}
+	if !c.TBank.IsDemo() && c.TBank.Password == "" {
+		errs = append(errs, "TBANK_PASSWORD is required unless TBANK_MODE=demo")
 	}
 	if _, err := url.Parse(c.TBank.APIBaseURL); err != nil {
 		errs = append(errs, "TBANK_API_BASE_URL is not a valid URL: "+err.Error())

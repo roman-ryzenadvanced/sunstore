@@ -40,7 +40,12 @@ export default function PerSiteStorefront() {
           const raw = window.localStorage.getItem(`sunstore-site-products-${slug}`);
           if (raw) {
             try {
-              setProducts(JSON.parse(raw));
+              const parsed = JSON.parse(raw);
+              setProducts(
+                Array.isArray(parsed)
+                  ? parsed.map((item) => toStorefrontProduct(item, slug, s?.name))
+                  : []
+              );
               return;
             } catch {
               // ignore
@@ -509,4 +514,26 @@ function SolarStorefront({
       </footer>
     </main>
   );
+}
+
+function toStorefrontProduct(item: any, siteSlug: string, siteName?: string | null): Product {
+  return {
+    id: Number(item?.id || 0),
+    site_id: item?.site_id ?? null,
+    site_slug: item?.site_slug ?? siteSlug,
+    site_name: item?.site_name ?? siteName ?? null,
+    category_id: item?.category_id ?? null,
+    category_slug: item?.category_slug ?? item?.category ?? null,
+    category_name_ru: item?.category_name_ru ?? item?.category ?? null,
+    slug: item?.slug || "",
+    title_ru: item?.title_ru ?? item?.title ?? "",
+    description_ru: item?.description_ru ?? item?.description ?? "",
+    price_kopecks: Number(item?.price_kopecks || 0),
+    sku: item?.sku || "",
+    stock_quantity: Number(item?.stock_quantity || 0),
+    images: Array.isArray(item?.images) ? item.images : [],
+    is_active: Boolean(item?.is_active),
+    created_at: item?.created_at || new Date(0).toISOString(),
+    updated_at: item?.updated_at || new Date(0).toISOString()
+  };
 }

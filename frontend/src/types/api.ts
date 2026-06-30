@@ -10,6 +10,9 @@ export type OrderStatus =
 
 export interface Product {
   id: number;
+  site_id?: number | null;
+  site_slug?: string | null;
+  site_name?: string | null;
   category_id?: number | null;
   category_slug?: string | null;
   category_name_ru?: string | null;
@@ -64,6 +67,7 @@ export interface CheckoutRequest {
   customer_name: string;
   email: string;
   phone: string;
+  site_slug?: string;
   items: CheckoutItemInput[];
 }
 

@@ -20,26 +20,28 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: "Sun Panels Store — premium solar panel showcase",
-    template: "%s · Sun Panels Store"
+    default: "Витрина Sun.store",
+    template: "%s · Sun.store"
   },
   description:
-    "Элегантные солнечные панели для современного дома. Высококачественные решения с акцентом на эффективность и дизайн.",
+    "Витрина Sun.store: единая платформа для управления магазинами, каталогами, заказами и оплатой через T-Bank.",
   keywords: [
-    "Sun Panels Store",
-    "solar panels",
-    "солнечные панели",
-    "энергоэффективность",
-    "зелёная энергия"
+    "Sun.store",
+    "Витрина Sun.store",
+    "маркетплейс",
+    "интернет-магазин",
+    "T-Bank",
+    "super admin"
   ],
-  authors: [{ name: "Sun Panels Store" }],
+  authors: [{ name: "Sun.store" }],
   openGraph: {
-    title: "Sun Panels Store — premium solar panels",
+    title: "Витрина Sun.store",
     description:
-      "Элегантные солнечные панели для современного дома.",
+      "Единая платформа для storefront, multi-store управления и оплат через T-Bank.",
     type: "website",
     locale: "ru_RU"
   },
+  alternates: { canonical: "/" },
   robots: { index: true, follow: true }
 };
 

@@ -38,9 +38,9 @@ func (h *SiteHandler) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"items": sites,
-		"total": total,
-		"limit": f.Limit,
+		"items":  sites,
+		"total":  total,
+		"limit":  f.Limit,
 		"offset": f.Offset,
 	})
 }
@@ -53,7 +53,49 @@ func (h *SiteHandler) GetBySlug(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not_found"})
 		return
 	}
+	if site.Status != domain.SiteStatusReady {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not_found"})
+		return
+	}
 	c.JSON(http.StatusOK, site)
+}
+
+// ListPublicProducts returns the active catalog for one public storefront.
+func (h *SiteHandler) ListPublicProducts(c *gin.Context) {
+	slug := c.Param("siteSlug")
+	site, err := h.sites.GetBySlug(c.Request.Context(), slug)
+	if err != nil || site.Status != domain.SiteStatusReady {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not_found"})
+		return
+	}
+	products, err := h.sites.ListSiteProducts(c.Request.Context(), site.ID, true)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "list_failed"})
+		return
+	}
+	out := make([]gin.H, 0, len(products))
+	for _, p := range products {
+		out = append(out, gin.H{
+			"id":               p.ID,
+			"site_id":          p.SiteID,
+			"site_slug":        site.Slug,
+			"site_name":        site.Name,
+			"category_id":      nil,
+			"category_slug":    p.Category,
+			"category_name_ru": p.Category,
+			"slug":             p.Slug,
+			"title_ru":         p.Title,
+			"description_ru":   p.Description,
+			"price_kopecks":    p.PriceKopecks,
+			"sku":              p.SKU,
+			"stock_quantity":   p.StockQuantity,
+			"images":           p.Images,
+			"is_active":        p.IsActive,
+			"created_at":       p.CreatedAt,
+			"updated_at":       p.UpdatedAt,
+		})
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // Create registers a brand-new site + first owner admin.
@@ -69,13 +111,13 @@ func (h *SiteHandler) Create(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
-		"site":  site,
+		"site": site,
 		"admin": gin.H{
 			"id":       admin.ID,
 			"username": admin.Username,
 			"role":     admin.Role,
 		},
-		"admin_url": "/sites/" + site.Slug + "/admin/login",
+		"admin_url":      "/sites/" + site.Slug + "/admin/login",
 		"storefront_url": "/sites/" + site.Slug,
 	})
 }

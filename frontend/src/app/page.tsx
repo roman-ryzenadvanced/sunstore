@@ -7,9 +7,9 @@ import { ProductGridSkeleton } from "@/components/skeletons";
 import { listStorefrontProducts } from "@/lib/api";
 
 export const metadata: Metadata = {
-  title: "Sun Store — солнечные панели, инверторы и комплектующие",
+  title: "Витрина Sun.store",
   description:
-    "Маркетплейс солнечной энергетики: панели, инверторы, аккумуляторы и монтажные комплекты с доставкой по региону.",
+    "Витрина Sun.store для multi-store e-commerce: один super admin, несколько магазинов, единый каталог и T-Bank checkout.",
   alternates: { canonical: "/" }
 };
 
@@ -37,11 +37,12 @@ export default async function HomePage() {
       <div className="shell home-stack">
         <section className="hero-panel hero-panel--ebay">
           <div className="hero-copy">
-            <p className="eyebrow">Sun Store / маркетплейс солнечной энергетики</p>
-            <h1>Солнечная энергетика — найдите свою панель.</h1>
+            <p className="eyebrow">Витрина Sun.store / Тихая роскошь для multi-store e-commerce</p>
+            <h1>Управляйте магазинами, каталогами и оплатой из одного центра.</h1>
             <p>
-              Тысячи товаров от проверенных продавцов: панели, инверторы,
-              аккумуляторы и монтажные комплекты с быстрой доставкой.
+              Sun.store объединяет storefront, super admin, заказы и T-Bank checkout.
+              Создавайте новые магазины, разворачивайте каталоги и тестируйте платежи
+              в demo или sandbox-сценариях без отдельной сборки.
             </p>
             <div className="hero-actions">
               <Link href={"/catalog" as Route} className="button button--primary">
@@ -63,11 +64,12 @@ export default async function HomePage() {
       {/* Search-first eBay-style hero */}
       <section className="hero-panel hero-panel--ebay">
         <div className="hero-copy">
-          <p className="eyebrow">Sun Store / маркетплейс солнечной энергетики</p>
-          <h1>Солнечная энергетика — найдите свою панель.</h1>
+          <p className="eyebrow">Витрина Sun.store / Тихая роскошь для multi-store e-commerce</p>
+          <h1>Управляйте магазинами, каталогами и оплатой из одного центра.</h1>
           <p>
-            Тысячи товаров от проверенных продавцов: панели, инверторы,
-            аккумуляторы и монтажные комплекты с быстрой доставкой.
+            Sun.store объединяет storefront, super admin, заказы и T-Bank checkout.
+            Создавайте новые магазины, разворачивайте каталоги и тестируйте платежи
+            в demo или sandbox-сценариях без отдельной сборки.
           </p>
           <div className="hero-actions">
             <Link href={"/catalog" as Route} className="button button--primary">

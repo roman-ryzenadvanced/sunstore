@@ -14,13 +14,15 @@ import (
 type OrderHandler struct {
 	orders   *usecase.OrderUseCase
 	payments *usecase.PaymentUseCase
+	site     *usecase.SiteCheckoutUseCase
 }
 
 // NewOrderHandler constructs an OrderHandler.
-func NewOrderHandler(orders *usecase.OrderUseCase, payments *usecase.PaymentUseCase) *OrderHandler {
+func NewOrderHandler(orders *usecase.OrderUseCase, payments *usecase.PaymentUseCase, site *usecase.SiteCheckoutUseCase) *OrderHandler {
 	return &OrderHandler{
 		orders:   orders,
 		payments: payments,
+		site:     site,
 	}
 }
 
@@ -31,7 +33,19 @@ func (h *OrderHandler) CheckoutInit(c *gin.Context) {
 		writeError(c, http.StatusBadRequest, "invalid JSON payload")
 		return
 	}
-	response, err := h.payments.CheckoutInit(c.Request.Context(), payload)
+	var (
+		response *domain.CheckoutResponse
+		err      error
+	)
+	if strings.TrimSpace(payload.SiteSlug) != "" {
+		if h.site == nil {
+			writeError(c, http.StatusServiceUnavailable, "site checkout is not configured")
+			return
+		}
+		response, err = h.site.CheckoutInit(c.Request.Context(), payload.SiteSlug, payload)
+	} else {
+		response, err = h.payments.CheckoutInit(c.Request.Context(), payload)
+	}
 	if err != nil {
 		writeDomainError(c, err)
 		return

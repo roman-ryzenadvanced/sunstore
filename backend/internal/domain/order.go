@@ -56,6 +56,7 @@ type CheckoutRequest struct {
 	CustomerName string              `json:"customer_name"`
 	Email        string              `json:"email"`
 	Phone        string              `json:"phone"`
+	SiteSlug     string              `json:"site_slug,omitempty"`
 	Items        []CheckoutItemInput `json:"items"`
 }
 
