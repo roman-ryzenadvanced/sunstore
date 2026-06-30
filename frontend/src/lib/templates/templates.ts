@@ -15,6 +15,7 @@
 
 import type { Template } from "./types";
 import { SOLAR_PANELS_TEMPLATE } from "./solar-panels";
+import { getMockProductImage } from "@/lib/mock-images";
 
 const baseTypography = {
   bodyFont: "'Manrope', system-ui, sans-serif",
@@ -30,7 +31,7 @@ const baseSpacing = {
   buttonRadius: "8px",
 };
 
-export const TEMPLATES: Template[] = [
+const RAW_TEMPLATES: Template[] = [
   // ========== 0. SOLAR PANELS (MAIN THEME) ==========
   SOLAR_PANELS_TEMPLATE,
 
@@ -2083,6 +2084,24 @@ export const TEMPLATES: Template[] = [
     },
   },
 ];
+
+export const TEMPLATES: Template[] = RAW_TEMPLATES.map((template) => ({
+  ...template,
+  products: template.products.map((product) => {
+    const category = template.categories.find((entry) => entry.id === product.category_id);
+    return {
+      ...product,
+      images: [
+        getMockProductImage({
+          title: product.title,
+          category: category?.name,
+          niche: template.niche,
+          subtitle: template.branding.storeName
+        })
+      ]
+    };
+  })
+}));
 
 // Helper functions
 export function getTemplateById(id: string): Template | undefined {

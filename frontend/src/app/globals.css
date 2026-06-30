@@ -8,7 +8,9 @@
   --panel-strong: #FFFFFF;
   --line: rgba(15, 23, 20, 0.10);
   --line-strong: rgba(15, 23, 20, 0.18);
+  --hairline: rgba(15, 23, 20, 0.10);
   --text: #191919;
+  --ink: #191919;
   --muted: #707070;
   /* Action color: eBay blue (#3665F3) — primary buttons, links, search. */
   --brand: #3665F3;
@@ -510,18 +512,147 @@ main:focus-visible {
 /* eBay-style search-first hero variant (single column, no showcase) */
 .hero-panel--ebay {
   grid-template-columns: 1fr;
-  background: linear-gradient(135deg, var(--brand-soft), #fff 70%);
+  padding: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(54, 101, 243, 0.12), rgba(255, 255, 255, 0.96) 45%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   border: 1px solid var(--hairline);
 }
 
-.hero-panel--ebay .hero-copy {
-  min-height: 0;
-  padding: 36px 32px;
+.hero-marketplace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+  gap: 0;
 }
 
-.hero-panel--ebay .hero-copy h1 {
-  font-size: clamp(2.4rem, 4.5vw, 4rem);
-  max-width: 18ch;
+.hero-marketplace__main {
+  display: grid;
+  gap: 22px;
+  padding: 42px 38px;
+}
+
+.hero-marketplace__main h1 {
+  margin: 0;
+  max-width: 12ch;
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.hero-marketplace__lead {
+  max-width: 60ch;
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.hero-marketplace__trust {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-marketplace__trust > div {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.hero-marketplace__trust strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hero-marketplace__trust span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.hero-marketplace__rail {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(241, 246, 255, 0.96), rgba(250, 252, 255, 0.96));
+  border-left: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.hero-offer {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border-radius: calc(var(--radius-xl) - 6px);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+}
+
+.hero-offer--accent {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244, 248, 255, 0.98)),
+    linear-gradient(135deg, rgba(54,101,243,0.09), rgba(255,255,255,0));
+}
+
+.hero-offer__tag {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--highlight-soft);
+  color: #835f00;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero-offer strong {
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.hero-offer p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.hero-offer a {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.hero-promo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-promo-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px 16px;
+  min-height: 124px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.hero-promo-card span {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hero-promo-card strong {
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 /* Category browse tiles */
@@ -1867,47 +1998,82 @@ main:focus-visible {
 
 /* ------------------------- Footer ------------------------- */
 .site-footer {
-  padding-bottom: 32px;
+  padding: 12px 0 36px;
 }
 
 .site-footer__inner {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 26px;
-  border-top: 1px solid rgba(66, 46, 31, 0.1);
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr);
+  gap: 28px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.98));
+  box-shadow: var(--shadow-sm);
 }
 
 .site-footer h3 {
   margin: 0;
   max-width: 16ch;
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-.site-footer__meta {
-  max-width: 38ch;
+.site-footer__brand {
+  display: grid;
+  gap: 12px;
+}
+
+.site-footer__brand p:not(.eyebrow) {
+  margin: 0;
   color: var(--muted);
+  max-width: 42ch;
+}
+
+.site-footer__columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.site-footer__group {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.site-footer__group strong {
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text);
 }
 
 .site-footer__nav {
-  display: flex;
-  gap: 16px;
-  margin: 8px 0;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 10px;
 }
 
 .site-footer__nav a:hover {
-  color: var(--text);
-  text-decoration: underline;
+  color: var(--brand);
 }
 
-.site-footer__copyright {
+.site-footer__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 8px 0;
+}
+
+.site-footer__copyright,
+.site-footer__legal {
+  margin: 0;
   font-size: 0.85rem;
-  opacity: 0.7;
+  color: var(--muted);
 }
 
 /* ------------------------- Admin ------------------------- */
@@ -2467,6 +2633,16 @@ main:focus-visible {
   .product-details__aside {
     position: static;
   }
+
+  .hero-marketplace,
+  .site-footer__inner,
+  .site-footer__columns {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-marketplace__trust {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -2509,6 +2685,17 @@ main:focus-visible {
     align-items: stretch;
   }
 
+  .hero-marketplace__main,
+  .hero-marketplace__rail,
+  .site-footer__inner {
+    padding: 22px;
+  }
+
+  .hero-promo-grid,
+  .cat-tiles {
+    grid-template-columns: 1fr;
+  }
+
   .site-nav--desktop {
     display: none;
   }
@@ -2535,10 +2722,6 @@ main:focus-visible {
   /* eBay grid collapses to a single column on phones */
   .product-grid {
     grid-template-columns: 1fr;
-  }
-
-  .cat-tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .product-trust {
@@ -2570,5 +2753,11 @@ main:focus-visible {
   .perk-card {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .site-footer__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-inline: 2px;
   }
 }

@@ -1,4 +1,5 @@
 import type { AdminLoginResponse, Order, Product } from "@/types/api";
+import { normalizeMockImages } from "@/lib/mock-images";
 
 const now = new Date().toISOString();
 
@@ -15,9 +16,7 @@ export const mockProducts: Product[] = [
     price_kopecks: 4990000,
     sku: "PANEL-MONO-450",
     stock_quantity: 120,
-    images: [
-      "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1200&q=80"
-    ],
+    images: [],
     is_active: true,
     created_at: now,
     updated_at: now
@@ -34,9 +33,7 @@ export const mockProducts: Product[] = [
     price_kopecks: 7490000,
     sku: "PANEL-BIFACIAL-550",
     stock_quantity: 64,
-    images: [
-      "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=1200&q=80"
-    ],
+    images: [],
     is_active: true,
     created_at: now,
     updated_at: now
@@ -53,9 +50,7 @@ export const mockProducts: Product[] = [
     price_kopecks: 8990000,
     sku: "INV-HYBRID-5K",
     stock_quantity: 38,
-    images: [
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=80"
-    ],
+    images: [],
     is_active: true,
     created_at: now,
     updated_at: now
@@ -72,9 +67,7 @@ export const mockProducts: Product[] = [
     price_kopecks: 12990000,
     sku: "BAT-LFP-100-48",
     stock_quantity: 22,
-    images: [
-      "https://images.unsplash.com/photo-1620283085439-39620a1e21c4?auto=format&fit=crop&w=1200&q=80"
-    ],
+    images: [],
     is_active: true,
     created_at: now,
     updated_at: now
@@ -91,9 +84,7 @@ export const mockProducts: Product[] = [
     price_kopecks: 3490000,
     sku: "MOUNT-ROOF-3KW",
     stock_quantity: 47,
-    images: [
-      "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80"
-    ],
+    images: [],
     is_active: true,
     created_at: now,
     updated_at: now
@@ -110,14 +101,12 @@ export const mockProducts: Product[] = [
     price_kopecks: 49990000,
     sku: "SVC-INSTALL-5KW",
     stock_quantity: 99,
-    images: [
-      "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=1200&q=80"
-    ],
+    images: [],
     is_active: true,
     created_at: now,
     updated_at: now
   }
-];
+].map((product) => normalizeMockImages(product, { category: product.category_name_ru }));
 
 export const mockOrders: Order[] = [
   {
