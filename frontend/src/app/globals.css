@@ -2305,6 +2305,15 @@ main:focus-visible {
   transition: opacity 300ms ease;
 }
 
+.smart-image__native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .smart-image__fallback,
 .smart-image__shimmer {
   position: absolute;

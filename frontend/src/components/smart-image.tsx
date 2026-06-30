@@ -41,6 +41,7 @@ export function SmartImage({
   }, [src]);
 
   const showImage = src && !errored;
+  const isInlineDataImage = Boolean(src?.startsWith("data:image/"));
 
   return (
     <div
@@ -48,7 +49,17 @@ export function SmartImage({
       style={{ aspectRatio }}
       data-loaded={loaded}
     >
-      {showImage ? (
+      {showImage ? isInlineDataImage ? (
+        <img
+          src={src}
+          alt={alt}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          onError={() => setErrored(true)}
+          className="smart-image__native"
+        />
+      ) : (
         <Image
           src={src}
           alt={alt}
@@ -58,6 +69,7 @@ export function SmartImage({
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}
           style={{ objectFit: "cover" }}
+          unoptimized={isInlineDataImage}
         />
       ) : (
         <div className="smart-image__fallback" aria-hidden="true">
