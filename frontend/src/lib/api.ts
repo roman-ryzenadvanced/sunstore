@@ -19,7 +19,7 @@ import type {
 
 const DEFAULT_API_BASE_URL = "http://localhost:8080/api/v1";
 const ENABLE_DEMO_FALLBACKS =
-  process.env.NEXT_PUBLIC_ENABLE_DEMO_FALLBACKS === "true";
+  process.env.NEXT_PUBLIC_ENABLE_DEMO_FALLBACKS !== "false";
 
 export class ApiError extends Error {
   constructor(
@@ -37,6 +37,29 @@ function getApiBaseUrl() {
     process.env.API_BASE_URL ||
     DEFAULT_API_BASE_URL
   ).replace(/\/+$/, "");
+}
+
+function hasExplicitApiBaseUrl() {
+  return Boolean(process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL);
+}
+
+function isLocalPlaceholderApiBase(baseUrl = getApiBaseUrl()) {
+  return /^https?:\/\/(localhost|127(?:\.\d+){3})(:\d+)?(\/|$)/i.test(baseUrl);
+}
+
+function shouldUseEmbeddedStorefrontMocks() {
+  return (
+    ENABLE_DEMO_FALLBACKS &&
+    isLocalPlaceholderApiBase() &&
+    !hasExplicitApiBaseUrl()
+  );
+}
+
+function listEmbeddedStorefrontProducts(query: CatalogQuery = {}) {
+  return filterProducts(
+    mockProducts.filter((product) => product.is_active),
+    query
+  );
 }
 
 function buildQuery(params: Record<string, string | number | undefined>) {
@@ -143,6 +166,9 @@ function filterProducts(products: Product[], query: CatalogQuery | AdminProductQ
 }
 
 export async function listStorefrontProducts(query: CatalogQuery = {}) {
+  if (shouldUseEmbeddedStorefrontMocks()) {
+    return listEmbeddedStorefrontProducts(query);
+  }
   try {
     return await request<Product[]>(
       `/products${buildQuery({
@@ -157,14 +183,18 @@ export async function listStorefrontProducts(query: CatalogQuery = {}) {
     if (!ENABLE_DEMO_FALLBACKS) {
       throw error;
     }
-    return filterProducts(
-      mockProducts.filter((product) => product.is_active),
-      query
-    );
+    return listEmbeddedStorefrontProducts(query);
   }
 }
 
 export async function getStorefrontProduct(slug: string) {
+  if (shouldUseEmbeddedStorefrontMocks()) {
+    const product = mockProducts.find((entry) => entry.slug === slug);
+    if (!product) {
+      throw new ApiError("Товар не найден", 404);
+    }
+    return product;
+  }
   try {
     return await request<Product>(`/products/${slug}`);
   } catch (error) {

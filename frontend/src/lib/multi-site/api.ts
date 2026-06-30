@@ -5,10 +5,11 @@
 
 import { Product } from "@/types/api";
 import { Template } from "@/lib/templates/types";
+import { TEMPLATES } from "@/lib/templates/templates";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8080/api/v1";
 const ENABLE_DEMO_FALLBACKS =
-  process.env.NEXT_PUBLIC_ENABLE_DEMO_FALLBACKS === "true";
+  process.env.NEXT_PUBLIC_ENABLE_DEMO_FALLBACKS !== "false";
 
 function getApiBaseUrl(): string {
   return (
@@ -16,6 +17,25 @@ function getApiBaseUrl(): string {
     (typeof window !== "undefined" && (window as any).__API_BASE__) ||
     DEFAULT_API_BASE_URL
   ).replace(/\/+$/, "");
+}
+
+function hasExplicitApiBaseUrl(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+      (typeof window !== "undefined" && (window as any).__API_BASE__)
+  );
+}
+
+function isLocalPlaceholderApiBase(baseUrl = getApiBaseUrl()): boolean {
+  return /^https?:\/\/(localhost|127(?:\.\d+){3})(:\d+)?(\/|$)/i.test(baseUrl);
+}
+
+function shouldUseEmbeddedSiteMocks(): boolean {
+  return (
+    ENABLE_DEMO_FALLBACKS &&
+    isLocalPlaceholderApiBase() &&
+    !hasExplicitApiBaseUrl()
+  );
 }
 
 export interface CentralSite {
@@ -196,15 +216,21 @@ export async function setSiteStatus(token: string, id: number, status: CentralSi
 }
 
 export async function getSiteBySlug(slug: string): Promise<CentralSite | null> {
+  if (shouldUseEmbeddedSiteMocks()) {
+    return getEmbeddedSiteBySlug(slug);
+  }
   try {
     return await request<CentralSite>(`/sites/${encodeURIComponent(slug)}`);
   } catch (error) {
     if (!ENABLE_DEMO_FALLBACKS) throw error;
-    return mockCentralSites().find((s) => s.slug === slug) || null;
+    return getEmbeddedSiteBySlug(slug);
   }
 }
 
 export async function listSiteProducts(slug: string): Promise<Product[]> {
+  if (shouldUseEmbeddedSiteMocks()) {
+    return getEmbeddedSiteProducts(slug);
+  }
   try {
     const items = await request<Array<ShopProduct | Product>>(
       `/sites/${encodeURIComponent(slug)}/products`
@@ -212,7 +238,7 @@ export async function listSiteProducts(slug: string): Promise<Product[]> {
     return items.map((item: any) => normalizeStorefrontProduct(item, slug));
   } catch (error) {
     if (!ENABLE_DEMO_FALLBACKS) throw error;
-    return [];
+    return getEmbeddedSiteProducts(slug);
   }
 }
 
@@ -678,4 +704,62 @@ function normalizeStorefrontProduct(item: Partial<ShopProduct> & Partial<Product
     created_at: item.created_at || new Date(0).toISOString(),
     updated_at: item.updated_at || new Date(0).toISOString()
   };
+}
+
+function getEmbeddedSiteBySlug(slug: string): CentralSite | null {
+  const existing = mockCentralSites().find((site) => site.slug === slug);
+  if (existing) return existing;
+
+  const template = TEMPLATES.find((entry) => entry.id === slug);
+  if (!template) return null;
+
+  return {
+    id: template.id.length,
+    slug,
+    name: template.branding.storeName,
+    niche: template.niche,
+    template_id: template.id,
+    status: "READY",
+    custom_domain: null,
+    primary_color: template.colors.accent,
+    logo_mark: template.branding.logoMark,
+    tagline: template.branding.tagline,
+    description: template.branding.description,
+    created_at: new Date(0).toISOString(),
+    updated_at: new Date(0).toISOString(),
+    launched_at: new Date(0).toISOString()
+  };
+}
+
+function getEmbeddedSiteProducts(slug: string): Product[] {
+  const site = getEmbeddedSiteBySlug(slug);
+  const template = TEMPLATES.find((entry) => entry.id === site?.template_id);
+  if (!template) return [];
+
+  return template.products.map((product, index) =>
+    normalizeStorefrontProduct(
+      {
+        id: Number(product.id.replace(/\D/g, "")) || index + 1,
+        site_id: site?.id,
+        site_slug: slug,
+        site_name: site?.name,
+        category_id: undefined,
+        category_slug: product.category_id,
+        category_name_ru:
+          template.categories.find((entry) => entry.id === product.category_id)?.name ??
+          product.category_id,
+        slug: product.slug,
+        title_ru: product.title,
+        description_ru: product.description,
+        price_kopecks: product.price_kopecks,
+        sku: product.sku,
+        stock_quantity: product.stock_quantity,
+        images: product.images,
+        is_active: product.is_active,
+        created_at: new Date(0).toISOString(),
+        updated_at: new Date(0).toISOString()
+      },
+      slug
+    )
+  );
 }
