@@ -27,6 +27,7 @@ export function AddToCartButton({
 
   const outOfStock =
     product.stock_quantity !== undefined && product.stock_quantity <= 0;
+  const effectiveLabel = variant === "compact" ? "В корзину" : label;
 
   async function handleAdd() {
     if (outOfStock) {
@@ -55,7 +56,7 @@ export function AddToCartButton({
     >
       {justAdded ? (
         <>
-          <Check size={16} aria-hidden="true" /> Добавлено
+          <Check size={16} aria-hidden="true" /> {variant === "compact" ? "Готово" : "Добавлено"}
         </>
       ) : outOfStock ? (
         <>
@@ -63,7 +64,7 @@ export function AddToCartButton({
         </>
       ) : (
         <>
-          <ShoppingBag size={16} aria-hidden="true" /> {label}
+          <ShoppingBag size={16} aria-hidden="true" /> {effectiveLabel}
         </>
       )}
     </button>
