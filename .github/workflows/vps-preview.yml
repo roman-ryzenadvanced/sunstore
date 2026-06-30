@@ -1,0 +1,126 @@
+name: VPS Preview Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate secrets
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_USER"
+          test -n "$VPS_PASSWORD"
+
+      - name: Install sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Archive workspace
+        run: |
+          tar \
+            --exclude=.git \
+            --exclude=frontend/node_modules \
+            -czf /tmp/sunstore-preview.tgz .
+
+      - name: Upload preview bundle
+        run: |
+          sshpass -p "$VPS_PASSWORD" scp \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 \
+            /tmp/sunstore-preview.tgz \
+            "$VPS_USER@$VPS_HOST:/tmp/sunstore-preview.tgz"
+
+      - name: Deploy preview on VPS
+        run: |
+          sshpass -p "$VPS_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 \
+            "$VPS_USER@$VPS_HOST" 'bash -s' <<'EOSSH'
+          set -euo pipefail
+
+          export DEBIAN_FRONTEND=noninteractive
+
+          if ! command -v node >/dev/null 2>&1; then
+            apt-get update
+            apt-get install -y ca-certificates curl
+            curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+            apt-get install -y nodejs
+          fi
+
+          if ! command -v pm2 >/dev/null 2>&1; then
+            npm install -g pm2
+          fi
+
+          mkdir -p /opt/sunstore-preview
+          tar -xzf /tmp/sunstore-preview.tgz -C /opt/sunstore-preview --strip-components=1
+
+          cd /opt/sunstore-preview/frontend
+          npm install
+          npm run build
+
+          pm2 delete sunstore-preview >/dev/null 2>&1 || true
+          pm2 start npm --name sunstore-preview -- run start -- --hostname 0.0.0.0 -p 3001
+          pm2 save >/dev/null 2>&1 || true
+
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3001 >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          pkill -f "localtunnel --host https://loca.lt --port 3001" >/dev/null 2>&1 || true
+          nohup npx localtunnel --host https://loca.lt --port 3001 >/var/log/sunstore-localtunnel.log 2>&1 &
+
+          PREVIEW_URL=""
+          for _ in $(seq 1 30); do
+            if [ -f /var/log/sunstore-localtunnel.log ]; then
+              PREVIEW_URL="$(grep -Eo "https://[-a-z0-9]+\.loca\.lt" /var/log/sunstore-localtunnel.log | tail -n 1 || true)"
+              if [ -n "$PREVIEW_URL" ]; then
+                break
+              fi
+            fi
+            sleep 2
+          done
+
+          echo "Preview URL: ${PREVIEW_URL:-not-found}"
+          if [ -n "${PREVIEW_URL:-}" ]; then
+            printf "%s" "$PREVIEW_URL" >/tmp/sunstore-preview-url.txt
+          fi
+          EOSSH
+
+      - name: Fetch preview URL
+        run: |
+          sshpass -p "$VPS_PASSWORD" scp \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 \
+            "$VPS_USER@$VPS_HOST:/tmp/sunstore-preview-url.txt" \
+            /tmp/sunstore-preview-url.txt || true
+
+          if [ -f /tmp/sunstore-preview-url.txt ]; then
+            PREVIEW_URL="$(cat /tmp/sunstore-preview-url.txt)"
+          else
+            PREVIEW_URL=""
+          fi
+
+          {
+            echo "## VPS preview"
+            if [ -n "$PREVIEW_URL" ]; then
+              echo
+              echo "$PREVIEW_URL"
+            else
+              echo
+              echo "Preview URL not found. Check remote log: /var/log/sunstore-localtunnel.log"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
