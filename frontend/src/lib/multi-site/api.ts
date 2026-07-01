@@ -6,6 +6,7 @@
 import { Product } from "@/types/api";
 import { Template } from "@/lib/templates/types";
 import { TEMPLATES } from "@/lib/templates/templates";
+import { mockOrders, mockProducts } from "@/lib/mock-data";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8080/api/v1";
 const ENABLE_DEMO_FALLBACKS =
@@ -36,6 +37,176 @@ function shouldUseEmbeddedSiteMocks(): boolean {
     isLocalPlaceholderApiBase() &&
     !hasExplicitApiBaseUrl()
   );
+}
+
+// ---------------------------------------------------------------------------
+// Client-side demo store (Vercel / frontend-only)
+// ---------------------------------------------------------------------------
+
+type DemoCentralState = {
+  sites: CentralSite[];
+  siteAdmins: Record<number, CentralSiteAdmin[]>;
+  siteProducts: Record<number, ShopProduct[]>;
+  siteOrders: Record<number, ShopOrder[]>;
+  platformEmail: EmailConfigDTO;
+  subscribers: Array<{ id: number; email: string; name?: string; created_at: string }>;
+  tickets: Array<{ id: number; name: string; email: string; phone?: string; subject: string; message: string; created_at: string }>;
+};
+
+const DEMO_STORAGE_KEY = "sunstore-demo-central-v1";
+
+function shouldUseClientDemoCentral(): boolean {
+  return ENABLE_DEMO_FALLBACKS && typeof window !== "undefined" && shouldUseEmbeddedSiteMocks();
+}
+
+function safeNow(): string {
+  return new Date().toISOString();
+}
+
+function buildStorefrontUrl(siteSlug: string): string {
+  // Works on Vercel preview/prod, same-origin and slug-based routing
+  return `/sites/${encodeURIComponent(siteSlug)}`;
+}
+
+function buildAdminUrl(siteId: number): string {
+  return `/central/sites/${siteId}`;
+}
+
+function toShopProduct(site: CentralSite, product: Product, idx: number): ShopProduct {
+  return {
+    id: Number(product.id) || idx + 1,
+    site_id: site.id,
+    site_slug: site.slug,
+    site_name: site.name,
+    slug: product.slug,
+    title: product.title_ru,
+    description: product.description_ru,
+    price_kopecks: product.price_kopecks,
+    sku: product.sku,
+    stock_quantity: product.stock_quantity,
+    images: product.images ?? [],
+    category: product.category_slug || product.category_name_ru || "general",
+    is_active: product.is_active,
+    created_at: product.created_at ?? safeNow(),
+    updated_at: product.updated_at ?? safeNow()
+  };
+}
+
+function toShopOrder(site: CentralSite, order: any, idx: number): ShopOrder {
+  return {
+    id: Number(order.id) || idx + 1,
+    site_id: site.id,
+    site_slug: site.slug,
+    site_name: site.name,
+    tbank_order_id: order.tbank_order_id ?? `SUN-MOCK-${idx + 1}`,
+    tbank_payment_id: order.tbank_payment_id ?? null,
+    customer_name: order.customer_name ?? "Покупатель",
+    customer_email: order.customer_email ?? "buyer@example.com",
+    customer_phone: order.customer_phone ?? "+7 999 000-00-00",
+    total_amount_kopecks: order.total_amount_kopecks ?? 0,
+    status: order.status ?? "CONFIRMED",
+    created_at: order.created_at ?? safeNow(),
+    updated_at: order.updated_at ?? safeNow()
+  };
+}
+
+function initDemoState(): DemoCentralState {
+  const sites = mockCentralSites();
+  const siteAdmins: Record<number, CentralSiteAdmin[]> = {};
+  const siteProducts: Record<number, ShopProduct[]> = {};
+  const siteOrders: Record<number, ShopOrder[]> = {};
+
+  for (const site of sites) {
+    siteAdmins[site.id] = [
+      {
+        id: site.id * 100 + 1,
+        site_id: site.id,
+        username: "admin",
+        role: "owner",
+        is_active: true,
+        last_login_at: null,
+        created_at: safeNow()
+      }
+    ];
+
+    // Product set: for the "solar panels" demo site use the storefront mock catalog,
+    // for template-driven sites use template products.
+    if (site.slug === "sun-panels") {
+      siteProducts[site.id] = mockProducts.map((p, idx) => toShopProduct(site, p, idx));
+      siteOrders[site.id] = mockOrders.map((o, idx) => toShopOrder(site, o, idx));
+    } else {
+      const template = TEMPLATES.find((t) => t.id === site.template_id);
+      siteProducts[site.id] = (template?.products ?? []).map((p, idx) => ({
+        id: Number(p.id.replace(/\D/g, "")) || idx + 1,
+        site_id: site.id,
+        site_slug: site.slug,
+        site_name: site.name,
+        slug: p.slug,
+        title: p.title,
+        description: p.description,
+        price_kopecks: p.price_kopecks,
+        sku: p.sku,
+        stock_quantity: p.stock_quantity,
+        images: p.images,
+        category: p.category_id,
+        is_active: p.is_active,
+        created_at: safeNow(),
+        updated_at: safeNow()
+      }));
+      siteOrders[site.id] = [];
+    }
+  }
+
+  return {
+    sites,
+    siteAdmins,
+    siteProducts,
+    siteOrders,
+    platformEmail: { configured: false },
+    subscribers: [],
+    tickets: []
+  };
+}
+
+function loadDemoState(): DemoCentralState {
+  if (typeof window === "undefined") return initDemoState();
+  try {
+    const raw = window.localStorage.getItem(DEMO_STORAGE_KEY);
+    if (!raw) {
+      const initial = initDemoState();
+      window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(initial));
+      return initial;
+    }
+    const parsed = JSON.parse(raw) as DemoCentralState;
+    if (!parsed?.sites) throw new Error("bad demo store");
+    return parsed;
+  } catch {
+    const initial = initDemoState();
+    try {
+      window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(initial));
+    } catch {
+      // ignore
+    }
+    return initial;
+  }
+}
+
+function saveDemoState(next: DemoCentralState): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+}
+
+function requireDemoToken(token?: string | null): void {
+  if (!token) throw new Error("HTTP 401: missing token");
+}
+
+function nextId(values: Array<{ id: number }>, base = 1): number {
+  const max = values.reduce((acc, v) => Math.max(acc, v.id || 0), 0);
+  return Math.max(max + 1, base);
 }
 
 export interface CentralSite {
@@ -178,10 +349,25 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
 // ----- Central admin auth -----
 
 export async function centralLogin(username: string, password: string): Promise<{ token: string; username: string }> {
-  return request("/central/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ username, password }),
-  });
+  try {
+    return await request("/central/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+  } catch (error) {
+    if (!ENABLE_DEMO_FALLBACKS) throw error;
+    if (!username.trim() || !password.trim()) {
+      throw new Error("HTTP 400: Введите логин и пароль");
+    }
+    // Frontend-only demo: accept credentials locally and issue a mock token.
+    if (shouldUseClientDemoCentral()) {
+      // Prefer the documented dev bootstrap for clarity, but allow any non-empty
+      // credentials in demo mode so users can proceed without backend wiring.
+      const demoToken = "demo-central-token";
+      return { token: demoToken, username: username.trim() };
+    }
+    throw error;
+  }
 }
 
 // ----- Sites -----
@@ -202,6 +388,71 @@ export async function listCentralSites(token: string, q?: { status?: string; nic
 }
 
 export async function createCentralSite(token: string, input: CreateSiteInput): Promise<{ site: CentralSite; admin: { id: number; username: string; role: string }; admin_url: string; storefront_url: string }> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    const id = nextId(state.sites, 100);
+    const site: CentralSite = {
+      id,
+      slug: input.slug,
+      name: input.name,
+      niche: input.niche,
+      template_id: input.template_id,
+      status: "READY",
+      custom_domain: input.custom_domain ?? null,
+      primary_color: input.primary_color ?? null,
+      logo_mark: input.logo_mark ?? null,
+      tagline: input.tagline ?? null,
+      description: input.description ?? null,
+      created_at: safeNow(),
+      updated_at: safeNow(),
+      launched_at: safeNow()
+    };
+
+    const adminId = id * 100 + 1;
+    const admin = { id: adminId, username: input.owner_username, role: "owner" };
+    state.sites = [site, ...state.sites];
+    state.siteAdmins[id] = [
+      {
+        id: adminId,
+        site_id: id,
+        username: input.owner_username,
+        role: "owner",
+        is_active: true,
+        last_login_at: null,
+        created_at: safeNow()
+      }
+    ];
+
+    const template = TEMPLATES.find((t) => t.id === input.template_id);
+    state.siteProducts[id] = (template?.products ?? []).map((p, idx) => ({
+      id: Number(p.id.replace(/\D/g, "")) || idx + 1,
+      site_id: id,
+      site_slug: input.slug,
+      site_name: input.name,
+      slug: p.slug,
+      title: p.title,
+      description: p.description,
+      price_kopecks: p.price_kopecks,
+      sku: p.sku,
+      stock_quantity: p.stock_quantity,
+      images: p.images,
+      category: p.category_id,
+      is_active: p.is_active,
+      created_at: safeNow(),
+      updated_at: safeNow()
+    }));
+    state.siteOrders[id] = [];
+
+    saveDemoState(state);
+    return {
+      site,
+      admin,
+      admin_url: buildAdminUrl(id),
+      storefront_url: buildStorefrontUrl(input.slug)
+    };
+  }
+
   return request("/central/sites", {
     method: "POST",
     body: JSON.stringify(input),
@@ -209,6 +460,15 @@ export async function createCentralSite(token: string, input: CreateSiteInput): 
 }
 
 export async function setSiteStatus(token: string, id: number, status: CentralSite["status"]): Promise<void> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    state.sites = state.sites.map((s) =>
+      s.id === id ? { ...s, status, updated_at: safeNow() } : s
+    );
+    saveDemoState(state);
+    return;
+  }
   return request(`/central/sites/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
@@ -252,11 +512,36 @@ export async function siteAdminLogin(slug: string, username: string, password: s
 }
 
 export async function listSiteAdmins(token: string, siteId: number): Promise<CentralSiteAdmin[]> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    return state.siteAdmins[siteId] ?? [];
+  }
   const r = await request<{ items: CentralSiteAdmin[] }>(`/central/sites/${siteId}/admins`, {}, token);
   return r.items;
 }
 
 export async function addSiteAdmin(token: string, siteId: number, username: string, password: string, role: string): Promise<CentralSiteAdmin> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    if (!username.trim() || !password.trim()) {
+      throw new Error("HTTP 400: Введите логин и пароль");
+    }
+    const state = loadDemoState();
+    const list = state.siteAdmins[siteId] ?? [];
+    const admin: CentralSiteAdmin = {
+      id: nextId(list, siteId * 100 + 1),
+      site_id: siteId,
+      username: username.trim(),
+      role: role || "manager",
+      is_active: true,
+      last_login_at: null,
+      created_at: safeNow()
+    };
+    state.siteAdmins[siteId] = [admin, ...list];
+    saveDemoState(state);
+    return admin;
+  }
   return request(`/central/sites/${siteId}/admins`, {
     method: "POST",
     body: JSON.stringify({ username, password, role }),
@@ -264,6 +549,13 @@ export async function addSiteAdmin(token: string, siteId: number, username: stri
 }
 
 export async function removeSiteAdmin(token: string, siteId: number, adminId: number): Promise<void> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    state.siteAdmins[siteId] = (state.siteAdmins[siteId] ?? []).filter((a) => a.id !== adminId);
+    saveDemoState(state);
+    return;
+  }
   return request(`/central/sites/${siteId}/admins/${adminId}`, {
     method: "DELETE",
   }, token);
@@ -274,6 +566,11 @@ export async function removeSiteAdmin(token: string, siteId: number, adminId: nu
 // ---------------------------------------------------------------------------
 
 export async function getShop(token: string, id: number): Promise<CentralSite | null> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    return state.sites.find((s) => s.id === id) ?? null;
+  }
   try {
     return await request<CentralSite>(`/central/sites/${id}`, {}, token);
   } catch (error) {
@@ -283,6 +580,36 @@ export async function getShop(token: string, id: number): Promise<CentralSite | 
 }
 
 export async function updateShopTheme(token: string, id: number, templateId: string): Promise<void> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    state.sites = state.sites.map((s) =>
+      s.id === id ? { ...s, template_id: templateId, updated_at: safeNow() } : s
+    );
+    const site = state.sites.find((s) => s.id === id);
+    const template = TEMPLATES.find((t) => t.id === templateId);
+    if (site && template) {
+      state.siteProducts[id] = (template.products ?? []).map((p, idx) => ({
+        id: Number(p.id.replace(/\D/g, "")) || idx + 1,
+        site_id: id,
+        site_slug: site.slug,
+        site_name: site.name,
+        slug: p.slug,
+        title: p.title,
+        description: p.description,
+        price_kopecks: p.price_kopecks,
+        sku: p.sku,
+        stock_quantity: p.stock_quantity,
+        images: p.images,
+        category: p.category_id,
+        is_active: p.is_active,
+        created_at: safeNow(),
+        updated_at: safeNow()
+      }));
+    }
+    saveDemoState(state);
+    return;
+  }
   return request(`/central/sites/${id}/theme`, {
     method: "PATCH",
     body: JSON.stringify({ template_id: templateId }),
@@ -295,6 +622,23 @@ export async function updateShopBranding(token: string, id: number, body: {
   primary_color?: string;
   logo_mark?: string;
 }): Promise<void> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    state.sites = state.sites.map((s) => {
+      if (s.id !== id) return s;
+      return {
+        ...s,
+        name: body.name ?? s.name,
+        tagline: body.tagline ?? s.tagline,
+        primary_color: body.primary_color ?? s.primary_color,
+        logo_mark: body.logo_mark ?? s.logo_mark,
+        updated_at: safeNow()
+      };
+    });
+    saveDemoState(state);
+    return;
+  }
   return request(`/central/sites/${id}/branding`, {
     method: "PATCH",
     body: JSON.stringify(body),
@@ -304,6 +648,11 @@ export async function updateShopBranding(token: string, id: number, body: {
 // --- Products (super-admin CRUD) ---
 
 export async function listShopProducts(token: string, id: number): Promise<ShopProduct[]> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    return state.siteProducts[id] ?? [];
+  }
   try {
     const r = await request<{ items: ShopProduct[] }>(`/central/sites/${id}/products`, {}, token);
     return r.items || [];
@@ -314,6 +663,32 @@ export async function listShopProducts(token: string, id: number): Promise<ShopP
 }
 
 export async function createShopProduct(token: string, id: number, p: Partial<ShopProduct>): Promise<ShopProduct> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    const list = state.siteProducts[id] ?? [];
+    const site = state.sites.find((s) => s.id === id);
+    const created: ShopProduct = {
+      id: nextId(list, 1),
+      site_id: id,
+      site_slug: site?.slug,
+      site_name: site?.name,
+      slug: (p.slug || `product-${Date.now()}`).toString(),
+      title: (p.title || "Новый товар").toString(),
+      description: (p.description || "").toString(),
+      price_kopecks: Number(p.price_kopecks || 0),
+      sku: (p.sku || `SKU-${Date.now()}`).toString(),
+      stock_quantity: Number(p.stock_quantity || 0),
+      images: Array.isArray(p.images) ? p.images : [],
+      category: (p.category || "general").toString(),
+      is_active: p.is_active !== false,
+      created_at: safeNow(),
+      updated_at: safeNow()
+    };
+    state.siteProducts[id] = [created, ...list];
+    saveDemoState(state);
+    return created;
+  }
   return request(`/central/sites/${id}/products`, {
     method: "POST",
     body: JSON.stringify(p),
@@ -321,6 +696,24 @@ export async function createShopProduct(token: string, id: number, p: Partial<Sh
 }
 
 export async function updateShopProduct(token: string, id: number, productId: number, p: Partial<ShopProduct>): Promise<ShopProduct> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    const list = state.siteProducts[id] ?? [];
+    const next = list.map((item) => {
+      if (item.id !== productId) return item;
+      return {
+        ...item,
+        ...p,
+        updated_at: safeNow()
+      } as ShopProduct;
+    });
+    state.siteProducts[id] = next;
+    saveDemoState(state);
+    const found = next.find((x) => x.id === productId);
+    if (!found) throw new Error("HTTP 404: Product not found");
+    return found;
+  }
   return request(`/central/sites/${id}/products/${productId}`, {
     method: "PUT",
     body: JSON.stringify(p),
@@ -328,6 +721,13 @@ export async function updateShopProduct(token: string, id: number, productId: nu
 }
 
 export async function deleteShopProduct(token: string, id: number, productId: number): Promise<void> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    state.siteProducts[id] = (state.siteProducts[id] ?? []).filter((p) => p.id !== productId);
+    saveDemoState(state);
+    return;
+  }
   return request(`/central/sites/${id}/products/${productId}`, {
     method: "DELETE",
   }, token);
@@ -336,6 +736,11 @@ export async function deleteShopProduct(token: string, id: number, productId: nu
 // --- Orders ---
 
 export async function listShopOrders(token: string, id: number): Promise<ShopOrder[]> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    return state.siteOrders[id] ?? [];
+  }
   try {
     const r = await request<{ items: ShopOrder[] }>(`/central/sites/${id}/orders`, {}, token);
     return r.items || [];
@@ -352,6 +757,21 @@ export async function listAllShopOrders(
   token: string,
   q?: { site_id?: number; status?: string; search?: string; limit?: number; offset?: number }
 ): Promise<{ items: ShopOrder[]; total: number }> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    const all = Object.values(state.siteOrders).flat();
+    const filtered = all.filter((o) => {
+      if (q?.site_id && o.site_id !== q.site_id) return false;
+      if (q?.status && o.status !== q.status) return false;
+      if (q?.search) {
+        const h = `${o.customer_name} ${o.customer_email} ${o.tbank_order_id}`.toLowerCase();
+        if (!h.includes(q.search.toLowerCase())) return false;
+      }
+      return true;
+    });
+    return { items: filtered, total: filtered.length };
+  }
   const params = new URLSearchParams();
   if (q?.site_id) params.set("site_id", String(q.site_id));
   if (q?.status) params.set("status", q.status);
@@ -376,6 +796,22 @@ export async function listAllShopProducts(
   token: string,
   q?: { site_id?: number; search?: string; category?: string; active?: boolean; limit?: number; offset?: number }
 ): Promise<{ items: ShopProduct[]; total: number }> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    const all = Object.values(state.siteProducts).flat();
+    const filtered = all.filter((p) => {
+      if (q?.site_id && p.site_id !== q.site_id) return false;
+      if (q?.category && p.category !== q.category) return false;
+      if (q?.active && !p.is_active) return false;
+      if (q?.search) {
+        const h = `${p.title} ${p.description} ${p.sku}`.toLowerCase();
+        if (!h.includes(q.search.toLowerCase())) return false;
+      }
+      return true;
+    });
+    return { items: filtered, total: filtered.length };
+  }
   const params = new URLSearchParams();
   if (q?.site_id) params.set("site_id", String(q.site_id));
   if (q?.search) params.set("q", q.search);
@@ -399,6 +835,11 @@ export async function listAllShopProducts(
 // --- Email config ---
 
 export async function getPlatformEmailConfig(token: string): Promise<EmailConfigDTO> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    return state.platformEmail ?? { configured: false };
+  }
   try {
     return await request<EmailConfigDTO>(`/central/email-config`, {}, token);
   } catch {
@@ -407,6 +848,13 @@ export async function getPlatformEmailConfig(token: string): Promise<EmailConfig
 }
 
 export async function upsertPlatformEmailConfig(token: string, input: EmailConfigInput): Promise<EmailConfigDTO> {
+  if (shouldUseClientDemoCentral()) {
+    requireDemoToken(token);
+    const state = loadDemoState();
+    state.platformEmail = { ...input, configured: true } as EmailConfigDTO;
+    saveDemoState(state);
+    return state.platformEmail;
+  }
   return request(`/central/email-config`, {
     method: "PUT",
     body: JSON.stringify(input),
