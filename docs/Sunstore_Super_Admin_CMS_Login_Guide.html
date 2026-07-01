@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Sun.store Super Admin CMS — Welcome & Login Guide</title>
+    <style>
+      :root{
+        --bg:#f6f8fb;
+        --card:#ffffff;
+        --ink:#0f172a;
+        --muted:#475569;
+        --line:rgba(15,23,42,.10);
+        --accent:#1f4fd8;
+        --accentSoft:rgba(31,79,216,.10);
+        --ok:#0f9d58;
+        --warn:#b45309;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --radius:18px;
+        --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif;
+        color:var(--ink);
+        background:
+          radial-gradient(900px 520px at 10% 10%, rgba(31,79,216,.09), transparent 50%),
+          radial-gradient(740px 520px at 92% 12%, rgba(255, 208, 86,.28), transparent 55%),
+          var(--bg);
+      }
+
+      a{ color: var(--accent); text-decoration: none; }
+      a:hover{ text-decoration: underline; }
+
+      .wrap{
+        width: min(980px, calc(100vw - 32px));
+        margin: 34px auto 60px;
+      }
+
+      header{
+        padding: 28px 28px 22px;
+        border-radius: calc(var(--radius) + 6px);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.90)),
+          linear-gradient(135deg, rgba(31,79,216,.10), rgba(255,255,255,0));
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+      }
+
+      .badge{
+        display:inline-flex;
+        align-items:center;
+        gap:10px;
+        padding: 7px 12px;
+        border-radius:999px;
+        background: var(--accentSoft);
+        color: var(--accent);
+        font-weight: 700;
+        letter-spacing:.04em;
+        text-transform: uppercase;
+        font-size: 12px;
+      }
+
+      h1{
+        margin: 14px 0 10px;
+        font-size: clamp(28px, 4.4vw, 44px);
+        letter-spacing: -0.03em;
+        line-height: 1.03;
+      }
+
+      .lead{
+        margin: 0;
+        color: var(--muted);
+        font-size: 15.5px;
+        line-height: 1.7;
+        max-width: 70ch;
+      }
+
+      .divider{
+        height: 4px;
+        width: 120px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent), rgba(31,79,216,.18));
+        margin-top: 16px;
+      }
+
+      main{
+        margin-top: 16px;
+        display: grid;
+        gap: 14px;
+      }
+
+      section{
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        padding: 22px;
+      }
+
+      h2{
+        margin: 0 0 10px;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+
+      h3{
+        margin: 16px 0 8px;
+        font-size: 14px;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: .08em;
+      }
+
+      p{ margin: 0 0 10px; color: var(--ink); line-height: 1.65; font-size: 14px; }
+      .muted{ color: var(--muted); }
+
+      .grid-2{
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .callout{
+        padding: 14px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(31,79,216,.18);
+        background: rgba(31,79,216,.06);
+      }
+
+      .callout.warn{
+        border-color: rgba(180,83,9,.25);
+        background: rgba(180,83,9,.08);
+      }
+
+      .mono{
+        font-family: var(--mono);
+        font-size: 13px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        border: 1px solid rgba(15,23,42,.10);
+        overflow-x: auto;
+        margin: 8px 0 10px;
+      }
+
+      table{
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+        border-radius: 14px;
+        border: 1px solid rgba(15,23,42,.10);
+      }
+
+      th, td{
+        text-align:left;
+        padding: 12px 12px;
+        font-size: 13.5px;
+        vertical-align: top;
+      }
+
+      th{
+        background: var(--accent);
+        color: white;
+        font-weight: 700;
+      }
+
+      tr:nth-child(even) td{ background: #f8fafc; }
+      tr:nth-child(odd) td{ background: #ffffff; }
+
+      ul{
+        margin: 8px 0 0 18px;
+        padding: 0;
+      }
+      li{ margin: 6px 0; color: var(--ink); line-height: 1.55; font-size: 14px; }
+
+      footer{
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 12.5px;
+        text-align: center;
+      }
+
+      @media (max-width: 860px){
+        .grid-2{ grid-template-columns: 1fr; }
+        header{ padding: 22px; }
+        section{ padding: 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <span class="badge">Sun.store · Super Admin CMS</span>
+        <h1>Welcome &amp; Login Guide</h1>
+        <p class="lead">
+          This guide shows how to access the Super Admin CMS (Central platform) and what to do on your first login.
+        </p>
+        <div class="divider" aria-hidden="true"></div>
+      </header>
+
+      <main>
+        <section>
+          <h2>Quick links</h2>
+          <p class="muted">Use these links depending on whether you want Production or Preview.</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width:34%">Use case</th>
+                <th>URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Storefront (Production)</td>
+                <td><a href="https://frontend-orcin-seven-95.vercel.app" target="_blank" rel="noreferrer">https://frontend-orcin-seven-95.vercel.app</a></td>
+              </tr>
+              <tr>
+                <td>Storefront (Preview)</td>
+                <td><a href="https://frontend-prprx8f2r-ryzenadvanceds-projects.vercel.app" target="_blank" rel="noreferrer">https://frontend-prprx8f2r-ryzenadvanceds-projects.vercel.app</a></td>
+              </tr>
+              <tr>
+                <td>Super Admin CMS (Production)</td>
+                <td><a href="https://frontend-orcin-seven-95.vercel.app/central/login" target="_blank" rel="noreferrer">https://frontend-orcin-seven-95.vercel.app/central/login</a></td>
+              </tr>
+              <tr>
+                <td>Super Admin CMS (Preview)</td>
+                <td><a href="https://frontend-prprx8f2r-ryzenadvanceds-projects.vercel.app/central/login" target="_blank" rel="noreferrer">https://frontend-prprx8f2r-ryzenadvanceds-projects.vercel.app/central/login</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>Login steps (Super Admin CMS)</h2>
+          <ol style="margin: 8px 0 0 18px; padding: 0; line-height: 1.7; font-size: 14px;">
+            <li>Open the Central login page (Production or Preview): <a href="https://frontend-orcin-seven-95.vercel.app/central/login" target="_blank" rel="noreferrer">/central/login</a></li>
+            <li>Enter your platform username and password, then press “Sign in”. You’ll be redirected to the dashboard.</li>
+            <li>If the page loads but sign-in fails on Vercel: the CMS login requires the backend API to be reachable to issue a token.</li>
+          </ol>
+
+          <div class="grid-2" style="margin-top:12px;">
+            <div class="callout">
+              <strong>Storefront vs CMS</strong>
+              <p class="muted" style="margin-top:6px;">
+                The storefront can run with embedded preview/mock products. The Super Admin CMS needs the backend API for authentication and real data.
+              </p>
+            </div>
+            <div class="callout warn">
+              <strong>When Vercel is “frontend-only”</strong>
+              <p class="muted" style="margin-top:6px;">
+                If you did not deploy the backend, the Central login endpoint won’t exist, so CMS login won’t work until the backend is online.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>Initial master Super Admin login</h2>
+          <p>
+            On a full-stack deployment (backend + database), the backend can create the first master Super Admin account via bootstrap variables:
+          </p>
+          <div class="mono">SUPER_ADMIN_BOOTSTRAP_USERNAME<br/>SUPER_ADMIN_BOOTSTRAP_PASSWORD</div>
+
+          <h3>Development default</h3>
+          <p class="muted">
+            If the backend is running with <strong>APP_ENV=development</strong> and you did not set the bootstrap variables,
+            the app auto-creates a default master Super Admin:
+          </p>
+          <div class="mono"><strong>Username:</strong> admin<br/><strong>Password:</strong> changeme123</div>
+          <p class="muted">
+            Important: this default is for development/testing only. For production, set bootstrap credentials explicitly and rotate them immediately after first login.
+          </p>
+        </section>
+
+        <section>
+          <h2>First actions after login</h2>
+          <p class="muted">After you reach the Central dashboard, typical first steps are:</p>
+          <ul>
+            <li>Create a new Store (site): choose slug, template, and owner credentials.</li>
+            <li>Review Products: cross-store listing and per-site catalogs.</li>
+            <li>Review Orders: monitor payments and statuses (demo mode is supported).</li>
+            <li>Configure Email: set platform-level SMTP/Gmail and optionally override per site.</li>
+            <li>Set custom domain instructions for the store owner (if used).</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Troubleshooting</h2>
+          <ul>
+            <li><strong>Login page loads but sign-in fails:</strong> confirm the backend API is up and reachable from the frontend.</li>
+            <li><strong>Storefront shows products but CMS is empty:</strong> storefront can use embedded preview data; CMS needs backend.</li>
+            <li><strong>Forgot password:</strong> rotate via database change or re-bootstrap on a fresh DB.</li>
+            <li><strong>Payments:</strong> set <span class="mono" style="display:inline-block; margin:0 4px; padding:2px 6px;">TBANK_MODE=demo</span> for safe testing; use sandbox/live only with real credentials.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Security notes</h2>
+          <ul>
+            <li>Change any default credentials immediately (especially <strong>admin / changeme123</strong>).</li>
+            <li>Use HTTPS for production, and restrict admin/CMS access where possible.</li>
+            <li>Do not commit real secrets into the repo; store them in your deployment environment.</li>
+          </ul>
+        </section>
+      </main>
+
+      <footer>
+        Sun.store · Super Admin CMS guide · Single-file HTML5
+      </footer>
+    </div>
+  </body>
+</html>
+
